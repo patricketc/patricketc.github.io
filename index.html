@@ -3,13 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <title>Great Circle Path Mapper</title>
+    <title>Great Circle Map</title>
 </head>
 <body>
-    <div id="map" style="height: 600px;"></div>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/geodesy@1.1.1/geodesy.js"></script>
+    <canvas id="mapCanvas" width="800" height="600"></canvas>
+    <form id="coordinateForm">
+        <label for="originLatitude">Origin Latitude:</label>
+        <input type="text" id="originLatitude" name="originLatitude" value="51.5074">
+
+        <label for="originLongitude">Origin Longitude:</label>
+        <input type="text" id="originLongitude" name="originLongitude" value="0.1278">
+
+        <label for="destinationLatitude">Destination Latitude:</label>
+        <input type="text" id="destinationLatitude" name="destinationLatitude" value="40.7128">
+
+        <label for="destinationLongitude">Destination Longitude:</label>
+        <input type="text" id="destinationLongitude" name="destinationLongitude" value="-74.0059">
+
+        <button type="button" onclick="updateCoordinates()">Update Coordinates</button>
+    </form>
+
+    <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
