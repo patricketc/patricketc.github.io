@@ -6,24 +6,30 @@
     <title>Great Circle Map</title>
 </head>
 <body>
-    <canvas id="mapCanvas" width="800" height="600"></canvas>
-    <form id="coordinateForm">
-        <label for="originLatitude">Origin Latitude:</label>
-        <input type="text" id="originLatitude" name="originLatitude" value="51.5074">
+    <div id="content">
+        <canvas id="mapCanvas" width="800" height="600"></canvas>
+        <form id="airportForm">
+            <label for="originCode">Origin Airport Code:</label>
+            <input type="text" id="originCode" required>
+            <label for="destinationCode">Destination Airport Code:</label>
+            <input type="text" id="destinationCode" required>
+            <button type="button" id="updateButton" onclick="updateCoordinates()">Update Map</button>
+        </form>
+        <form id="projectionForm">
+            <label for="projection">Select Projection:</label>
+            <select id="projection" onchange="updateProjection()">
+                <option value="orthographic">Orthographic</option>
+                <option value="azimuthalEquidistant">Azimuthal Equidistant</option>
+                <option value="equirectangular">Equirectangular</option>
+            </select>
+        </form>
+    </div>
+    <div id="originAirport"></div>
+    <div id="destinationAirport"></div>
+    <div id="distance"></div>
 
-        <label for="originLongitude">Origin Longitude:</label>
-        <input type="text" id="originLongitude" name="originLongitude" value="0.1278">
-
-        <label for="destinationLatitude">Destination Latitude:</label>
-        <input type="text" id="destinationLatitude" name="destinationLatitude" value="40.7128">
-
-        <label for="destinationLongitude">Destination Longitude:</label>
-        <input type="text" id="destinationLongitude" name="destinationLongitude" value="-74.0059">
-
-        <button type="button" onclick="updateCoordinates()">Update Coordinates</button>
-    </form>
-
-    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="distance.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
