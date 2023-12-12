@@ -3,7 +3,7 @@ let context = d3.select('#mapCanvas')
     .getContext('2d');
 
 let projection;
-
+let geojsonData;
 
 let originAirportName = "";
 let destinationAirportName = "";
@@ -40,6 +40,8 @@ function updateAzimuthalEquidistantProjection() {
 
     // Update the geoGenerator with the new Azimuthal Equidistant projection
     geoGenerator.projection(projection);
+    d3.select('#mapCanvas').call(drag(projection));
+    update(geojsonData);
 }
 
 function updateEquirectangularProjection() {
@@ -49,6 +51,8 @@ function updateEquirectangularProjection() {
 
     // Update the geoGenerator with the new Equirectangular projection
     geoGenerator.projection(projection);
+    d3.select('#mapCanvas').call(drag(projection));
+    update(geojsonData);
 }
 
 
@@ -102,11 +106,11 @@ function update(geojson) {
     context.stroke();
 
     //Circle around Origin
-    let circle = d3.geoCircle().center([originLongitude, originLatitude]).radius(5);
+    /*let circle = d3.geoCircle().center([originLongitude, originLatitude]).radius(5);
     context.beginPath();
     context.strokeStyle = 'red';
     geoGenerator(circle());
-    context.stroke();
+    context.stroke();*/
 
     /// Display origin and destination airport names
     originAirportName = findAirportNameByCode(document.getElementById('originCode').value.toUpperCase());
@@ -124,62 +128,29 @@ function update(geojson) {
 
 function findAirportNameByCode(airportCode) {
     const airport = airportData.find(d => d.icao === airportCode || d.iata === airportCode);
-    console.log("Airport Data:", airport);
+    //  console.log("Airport Data:", airport);
     return airport ? airport.name : null;
 }
 
 function drag(projection) {
-    let v0, q0, r0, a0, l;
-  
-    function pointer(event, that) {
-      const t = d3.pointers(event, that);
-  
-      if (t.length !== l) {
-        l = t.length;
-        if (l > 1) a0 = Math.atan2(t[1][1] - t[0][1], t[1][0] - t[0][0]);
-        dragstarted.apply(that, [event, that]);
-      }
-  
-      // For multitouch, average positions and compute rotation.
-      if (l > 1) {
-        const x = d3.mean(t, p => p[0]);
-        const y = d3.mean(t, p => p[1]);
-        const a = Math.atan2(t[1][1] - t[0][1], t[1][0] - t[0][0]);
-        return [x, y, a];
-      }
-  
-      return t[0];
+    let v0, q0, r0;
+
+    function dragstarted(event) {
+        v0 = versor.cartesian(projection.invert(d3.pointer(event, this)));
+        q0 = versor(r0 = projection.rotate());
     }
-  
-    function dragstarted({x, y}) {
-      v0 = versor.cartesian(projection.invert([x, y]));
-      q0 = versor(r0 = projection.rotate());
-    }
-  
+
     function dragged(event) {
-      const v1 = versor.cartesian(projection.rotate(r0).invert([event.x, event.y]));
-      const delta = versor.delta(v0, v1);
-      let q1 = versor.multiply(q0, delta);
-  
-      // For multitouch, compose with a rotation around the axis.
-      const p = pointer(event, this);
-      if (p[2]) {
-        const d = (p[2] - a0) / 2;
-        const s = -Math.sin(d);
-        const c = Math.sign(Math.cos(d));
-        q1 = versor.multiply([Math.sqrt(1 - s * s), 0, 0, c * s], q1);
-      }
-  
-      projection.rotate(versor.rotation(q1));
-  
-      // In vicinity of the antipode (unstable) of q0, restart.
-      if (delta[0] < 0.7) dragstarted.apply(this, [event, this]);
+        const v1 = versor.cartesian(projection.rotate(r0).invert(d3.pointer(event, this)));
+        const q1 = versor.multiply(q0, versor.delta(v0, v1));
+        projection.rotate(versor.rotation(q1));
+
+        //Redraw map with udpated projection
+        update(geojsonData);
     }
-  
-    return d3.drag()
-        .on("start", dragstarted)
-        .on("drag", dragged);
-  }
+
+    return d3.drag().on("start", dragstarted).on("drag", dragged);
+}
 
 // Attach the drag behavior to the canvas
 d3.select('#mapCanvas').call(drag(projection));
@@ -206,11 +177,12 @@ function updateCoordinates() {
         destinationLongitude = destinationCoordinates.longitude;
 
         // Load GeoJSON file
-        d3.json('https://gist.githubusercontent.com/d3indepth/f28e1c3a99ea6d84986f35ac8646fac7/raw/c58cede8dab4673c91a3db702d50f7447b373d98/ne_110m_land.json')
+        /*d3.json('https://gist.githubusercontent.com/d3indepth/f28e1c3a99ea6d84986f35ac8646fac7/raw/c58cede8dab4673c91a3db702d50f7447b373d98/ne_110m_land.json')
             .then(function (json) {
                 // Update and redraw the map with loaded GeoJSON data
                 update(json);
-            });
+            });*/
+        update(geojsonData);    
     } else {
         console.error('Coordinates not found for the provided airport codes.');
     }
@@ -219,5 +191,6 @@ function updateCoordinates() {
 // REQUEST DATA
 d3.json('https://gist.githubusercontent.com/d3indepth/f28e1c3a99ea6d84986f35ac8646fac7/raw/c58cede8dab4673c91a3db702d50f7447b373d98/ne_110m_land.json')
     .then(function (json) {
-        update(json);
-    });   
+        geojsonData = json;
+    update(geojsonData); // Initial draw
+});   
