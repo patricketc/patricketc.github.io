@@ -1,29 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Great Circle Map</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        #content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        form {
-            margin-top: 10px;
-        }
-        #infoPanel {
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-    </style>
-</head>
+    <head>
+        <!-- Existing meta and title tags -->
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            /* Existing styles */
+    
+            /* Responsive canvas */
+            #mapCanvas {
+                max-width: 100%;
+                height: auto;
+            }
+    
+            /* Larger form elements for touch-friendliness */
+            form {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+    
+            input[type="text"], button, select {
+                min-width: 200px; /* Adjust as needed */
+                margin: 5px;
+                padding: 10px; /* Larger padding for easier touch */
+            }
+    
+            /* Styles for smaller screens */
+            @media (max-width: 600px) {
+                /* Adjust styles for smaller screens */
+                input[type="text"], button, select {
+                    min-width: 150px;
+                }
+            }
+        </style>
+    </head>    
 <body>
     <div id="content">
         <canvas id="mapCanvas"></canvas>
@@ -42,10 +52,6 @@
                 <option value="equirectangular">Equirectangular</option>
             </select>
         </form>
-        <div id="zoomControls">
-            <button id="zoomIn">+</button>
-            <button id="zoomOut">-</button>
-        </div>
     </div>
     <div id="infoPanel">
         <div id="originAirport"></div>

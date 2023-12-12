@@ -53,6 +53,7 @@ function updateOrthographicProjection() {
 
     // Update the geoGenerator with the new Orthographic projection
     geoGenerator.projection(projection);
+    adjustProjection();
     d3.select('#mapCanvas').call(drag(projection));
     d3.select('#mapCanvas').call(zoom);
     update(geojsonData);
@@ -65,6 +66,7 @@ function updateAzimuthalEquidistantProjection() {
 
     // Update the geoGenerator with the new Azimuthal Equidistant projection
     geoGenerator.projection(projection);
+    adjustProjection();
     d3.select('#mapCanvas').call(drag(projection));
     d3.select('#mapCanvas').call(zoom);
     update(geojsonData);
@@ -77,6 +79,7 @@ function updateEquirectangularProjection() {
 
     // Update the geoGenerator with the new Equirectangular projection
     geoGenerator.projection(projection);
+    adjustProjection();
     // Detach any existing drag behaviors
     d3.select('#mapCanvas').on("mousedown.drag", null);
     d3.select('#mapCanvas').call(getPanBehavior(projection)); // Attach pan behavior
@@ -177,6 +180,25 @@ function drag(projection) {
     return d3.drag().on("start", dragstarted).on("drag", dragged);
 }
 
+function adjustProjection() {
+    const canvas = document.getElementById('mapCanvas');
+    const width = canvas.width;
+    const height = canvas.height;
+    const scaleFactor = Math.min(width / 800, height / 600); // Adjust based on your default dimensions
+    const newScale = 250 * scaleFactor; // Adjust base scale (250 in this example) as needed
+    const newTranslate = [width / 2, height / 2];
+
+    projection.scale(newScale).translate(newTranslate);
+    update(geojsonData);
+}
+
+function resizeCanvas() {
+    const canvas = document.getElementById('mapCanvas');
+    canvas.width = window.innerWidth * 0.8;
+    canvas.height = window.innerHeight * 0.6;
+    adjustProjection();
+}
+
 // Drag behavior for panning
 function getPanBehavior(projection) {
     let x0, y0;
@@ -248,9 +270,25 @@ function init() {
     loadData();
     d3.select('#mapCanvas').call(drag(projection));
     d3.select('#mapCanvas').call(zoom);
+    resizeCanvas(); // Call resizeCanvas after initializing the projection
 
     // Other initialization code (event listeners, etc.) goes here
     // ...
+}
+
+// Adjust Projection
+function adjustProjection() {
+    if (!projection) return; // Check if projection is defined
+
+    const canvas = document.getElementById('mapCanvas');
+    const width = canvas.width;
+    const height = canvas.height;
+    const scaleFactor = Math.min(width / 800, height / 600);
+    const newScale = 250 * scaleFactor;
+    const newTranslate = [width / 2, height / 2];
+
+    projection.scale(newScale).translate(newTranslate);
+    update(geojsonData);
 }
 
 // Call the initialization function
