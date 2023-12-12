@@ -4,10 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Great Circle Map</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        form {
+            margin-top: 10px;
+        }
+        #infoPanel {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
     <div id="content">
-        <canvas id="mapCanvas" width="800" height="600"></canvas>
+        <canvas id="mapCanvas"></canvas>
         <form id="airportForm">
             <label for="originCode">Origin Airport Code:</label>
             <input type="text" id="originCode" required>
@@ -23,14 +42,45 @@
                 <option value="equirectangular">Equirectangular</option>
             </select>
         </form>
+        <div id="zoomControls">
+            <button id="zoomIn">+</button>
+            <button id="zoomOut">-</button>
+        </div>
     </div>
-    <div id="originAirport"></div>
-    <div id="destinationAirport"></div>
-    <div id="distance"></div>
+    <div id="infoPanel">
+        <div id="originAirport"></div>
+        <div id="destinationAirport"></div>
+        <div id="distance"></div>
+    </div>
 
     <script src="distance.js"></script>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/versor@0.2"></script>
     <script src="app.js"></script>
+
+    <script>
+        // Responsive Canvas
+        function resizeCanvas() {
+            const canvas = document.getElementById('mapCanvas');
+            const width = window.innerWidth * 0.8;
+            const height = window.innerHeight * 0.6;
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Adjust the projection settings based on new dimensions
+            const scaleFactor = Math.min(width / 800, height / 600); // Original canvas size as reference
+            const newScale = 250 * scaleFactor; // Adjust this based on your original scale
+            const newTranslate = [width / 2, height / 2]; // Centering the map
+
+            projection.scale(newScale).translate(newTranslate);
+
+            // Redraw the map with the updated settings
+            update(geojsonData);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    </script>
 </body>
 </html>

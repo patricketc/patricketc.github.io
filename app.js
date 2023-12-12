@@ -3,10 +3,24 @@ let context = d3.select('#mapCanvas')
     .getContext('2d');
 
 let projection;
+let geoGenerator;
 let geojsonData;
 
 let originAirportName = "";
 let destinationAirportName = "";
+
+let zoom = d3.zoom()
+    .scaleExtent([1, 8])  // Adjust scale extent according to your needs
+    .on('zoom', (event) => {
+        const {transform} = event;
+        projection.scale(250 * transform.k);  // Adjust the 250 multiplier as needed
+
+        // You might also want to adjust the translation based on the zoom
+        // For example:
+        // projection.translate([transform.x, transform.y]);
+
+        update(geojsonData);  // Redraw the map with the new scale
+    });
 
 function updateProjection() {
     const selectedProjection = document.getElementById('projection').value;
@@ -20,9 +34,17 @@ function updateProjection() {
     }
 }
 
-let geoGenerator = d3.geoPath()
-    .projection(projection)
-    .context(context);
+function initProjection() {
+    projection = d3.geoOrthographic()
+        .scale(250)
+        .rotate([45, 0]);
+    geoGenerator = d3.geoPath()
+        .projection(projection)
+        .context(context);
+    d3.select('#mapCanvas').call(drag(projection));
+    d3.select('#mapCanvas').call(zoom);
+    update(geojsonData);
+}
 
 function updateOrthographicProjection() {
     projection = d3.geoOrthographic()
@@ -31,6 +53,9 @@ function updateOrthographicProjection() {
 
     // Update the geoGenerator with the new Orthographic projection
     geoGenerator.projection(projection);
+    d3.select('#mapCanvas').call(drag(projection));
+    d3.select('#mapCanvas').call(zoom);
+    update(geojsonData);
 }
 
 function updateAzimuthalEquidistantProjection() {
@@ -41,6 +66,7 @@ function updateAzimuthalEquidistantProjection() {
     // Update the geoGenerator with the new Azimuthal Equidistant projection
     geoGenerator.projection(projection);
     d3.select('#mapCanvas').call(drag(projection));
+    d3.select('#mapCanvas').call(zoom);
     update(geojsonData);
 }
 
@@ -51,13 +77,12 @@ function updateEquirectangularProjection() {
 
     // Update the geoGenerator with the new Equirectangular projection
     geoGenerator.projection(projection);
-    d3.select('#mapCanvas').call(drag(projection));
+    // Detach any existing drag behaviors
+    d3.select('#mapCanvas').on("mousedown.drag", null);
+    d3.select('#mapCanvas').call(getPanBehavior(projection)); // Attach pan behavior
+    d3.select('#mapCanvas').call(zoom);
     update(geojsonData);
 }
-
-
-// Initialize the map with the default projection (Orthographic in this example)
-updateOrthographicProjection();
 
 let airportData; // Variable to store loaded airport data
 
@@ -152,6 +177,28 @@ function drag(projection) {
     return d3.drag().on("start", dragstarted).on("drag", dragged);
 }
 
+// Drag behavior for panning
+function getPanBehavior(projection) {
+    let x0, y0;
+
+    function dragstarted(event) {
+        [x0, y0] = [event.x, event.y];
+    }
+
+    function dragged(event) {
+        let dx = event.x - x0,
+            dy = event.y - y0;
+
+        let [tx, ty] = projection.translate();
+        projection.translate([tx + dx, ty + dy]);
+
+        update(geojsonData); // Redraw the map with the updated translation
+        [x0, y0] = [event.x, event.y]; // Update the initial drag position
+    }
+
+    return d3.drag().on("start", dragstarted).on("drag", dragged);
+}
+
 // Attach the drag behavior to the canvas
 d3.select('#mapCanvas').call(drag(projection));
 
@@ -193,4 +240,18 @@ d3.json('https://gist.githubusercontent.com/d3indepth/f28e1c3a99ea6d84986f35ac86
     .then(function (json) {
         geojsonData = json;
     update(geojsonData); // Initial draw
-});   
+});
+
+// Initialization
+function init() {
+    initProjection();
+    loadData();
+    d3.select('#mapCanvas').call(drag(projection));
+    d3.select('#mapCanvas').call(zoom);
+
+    // Other initialization code (event listeners, etc.) goes here
+    // ...
+}
+
+// Call the initialization function
+init();
