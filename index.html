@@ -1,92 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <!-- Existing meta and title tags -->
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            /* Existing styles */
-    
-            /* Responsive canvas */
-            #mapCanvas {
-                max-width: 100%;
-                height: auto;
-            }
-    
-            /* Larger form elements for touch-friendliness */
-            form {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-            }
-    
-            input[type="text"], button, select {
-                min-width: 200px; /* Adjust as needed */
-                margin: 5px;
-                padding: 10px; /* Larger padding for easier touch */
-            }
-    
-            /* Styles for smaller screens */
-            @media (max-width: 600px) {
-                /* Adjust styles for smaller screens */
-                input[type="text"], button, select {
-                    min-width: 150px;
-                }
-            }
-        </style>
-    </head>    
-<body>
-    <div id="content">
-        <canvas id="mapCanvas"></canvas>
-        <form id="airportForm">
-            <label for="originCode">Origin Airport Code:</label>
-            <input type="text" id="originCode" required>
-            <label for="destinationCode">Destination Airport Code:</label>
-            <input type="text" id="destinationCode" required>
-            <button type="button" id="updateButton" onclick="updateCoordinates()">Update Map</button>
-        </form>
-        <form id="projectionForm">
-            <label for="projection">Select Projection:</label>
-            <select id="projection" onchange="updateProjection()">
-                <option value="orthographic">Orthographic</option>
-                <option value="azimuthalEquidistant">Azimuthal Equidistant</option>
-                <option value="equirectangular">Equirectangular</option>
-            </select>
-        </form>
-    </div>
-    <div id="infoPanel">
-        <div id="originAirport"></div>
-        <div id="destinationAirport"></div>
-        <div id="distance"></div>
-    </div>
-
-    <script src="distance.js"></script>
-    <script src="https://d3js.org/d3.v6.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/versor@0.2"></script>
-    <script src="app.js"></script>
-
-    <script>
-        // Responsive Canvas
-        function resizeCanvas() {
-            const canvas = document.getElementById('mapCanvas');
-            const width = window.innerWidth * 0.8;
-            const height = window.innerHeight * 0.6;
-
-            canvas.width = width;
-            canvas.height = height;
-
-            // Adjust the projection settings based on new dimensions
-            const scaleFactor = Math.min(width / 800, height / 600); // Original canvas size as reference
-            const newScale = 250 * scaleFactor; // Adjust this based on your original scale
-            const newTranslate = [width / 2, height / 2]; // Centering the map
-
-            projection.scale(newScale).translate(newTranslate);
-
-            // Redraw the map with the updated settings
-            update(geojsonData);
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Great Circle Path Mapper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
         }
 
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-    </script>
+        .container {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .row label {
+            margin-right: 10px;
+            font-weight: bold;
+            width: 120px; /* Set a fixed width for labels */
+        }
+
+        .row input {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .readout {
+            margin-left: 20px;
+            font-size: 16px;
+            font-style: italic;
+            color: #555;
+        }
+
+        #map {
+            width: 90vw;
+            height: 60vh;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <label for="origin">Origin Airport:</label>
+            <input type="text" id="origin" placeholder="Enter origin airport code">
+            <span class="readout" id="origin-code">e.g., JFK</span>
+        </div>
+        <div class="row">
+            <label for="destination">Destination Airport:</label>
+            <input type="text" id="destination" placeholder="Enter destination airport code">
+            <span class="readout" id="destination-code">e.g., LAX</span>
+        </div>
+    </div>
+    <div id="map"></div>
+    <script src="app.js"></script>
 </body>
 </html>
