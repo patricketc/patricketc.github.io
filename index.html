@@ -1,116 +1,1599 @@
-hi<!DOCTYPE html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Meyers 200 – Oshkosh Display</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f9f9f9;
-    color: #222;
-    margin: 0;
-    padding: 0;
-    line-height: 1.6;
-  }
-  header {
-    background: #4CBB17;
-    color: #fff;
-    padding: 1.5em;
-    text-align: center;
-  }
-  h1, h2 {
-    margin: 0.5em 0;
-  }
-  main {
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 0 15px;
-  }
-  section {
-    margin-bottom: 2em;
-    padding: 1em;
-    background: #fff;
-    border-radius: 6px;
-    box-shadow: 0 0 4px rgba(0,0,0,0.1);
-  }
-  .photos {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .photos img {
-    max-width: 280px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-  }
-  footer {
-    text-align: center;
-    font-size: 0.9em;
-    color: #555;
-    padding: 2em 0;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Great Circle Airline Route Mapper</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-geo-projection@4"></script>
+    <script type="module">
+        import airportData from 'https://cdn.jsdelivr.net/npm/airport-data@1.0.1/+esm';
+        window.loadedAirportData = airportData;
+        window.airportDataReady = true;
+        window.dispatchEvent(new CustomEvent('airportDataLoaded'));
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #60a5fa;
+            font-size: 2em;
+        }
+        .controls {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .route-entry {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #60a5fa;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            position: relative;
+        }
+        .route-entry:hover {
+            box-shadow: 0 2px 8px rgba(96, 165, 250, 0.3);
+        }
+        .route-header {
+            cursor: move;
+        }
+        .route-entry.dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
+        }
+        .route-entry.drag-over {
+            transform: translateY(-8px);
+            box-shadow: 0 -4px 0 0 #60a5fa, 0 4px 12px rgba(96, 165, 250, 0.5);
+        }
+        .route-entry.drag-over::before {
+            content: "Drop here";
+            position: absolute;
+            top: -28px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #60a5fa;
+            color: #0f172a;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .route-number {
+            font-weight: 600;
+            color: #60a5fa;
+            font-size: 1.1em;
+        }
+        .remove-route {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+        .remove-route:hover {
+            background: #dc2626;
+        }
+        .input-wrapper {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #94a3b8;
+            font-size: 0.9em;
+        }
+        .helper-text {
+            font-size: 0.8em;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .style-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .style-item label {
+            font-size: 0.8em;
+            margin-bottom: 2px;
+        }
+        .color-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-input-wrapper input[type="color"] {
+            width: 40px;
+            height: 32px;
+            padding: 2px;
+            cursor: pointer;
+        }
+        .color-value {
+            font-size: 0.85em;
+            color: #94a3b8;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .add-route-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+        }
+        .add-route-btn:hover {
+            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
+        }
+        .clear-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);
+        }
+        .clear-btn:hover {
+            box-shadow: 0 6px 12px rgba(239, 68, 68, 0.4);
+        }
+        .map-container {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        #map {
+            width: 100%;
+            height: 788px;
+        }
+        .info-panel {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .route-list {
+            margin-top: 15px;
+        }
+        .route-item {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #60a5fa;
+        }
+        .route-item-header {
+            font-weight: 600;
+            color: #60a5fa;
+            margin-bottom: 8px;
+        }
+        .distance-display {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            font-size: 0.9em;
+        }
+        .distance-item {
+            color: #94a3b8;
+        }
+        .distance-value {
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+        .path {
+            fill: none;
+            stroke-linecap: round;
+        }
+        .graticule {
+            fill: none;
+            stroke: #334155;
+            stroke-width: 0.5;
+        }
+        .sphere {
+            fill: #1e3a5f;
+            stroke: none;
+            pointer-events: none;
+        }
+        .sphere-border {
+            fill: none;
+            stroke: #60a5fa;
+            stroke-width: 2;
+            pointer-events: none;
+        }
+        .land {
+            fill: #475569;
+            stroke: #334155;
+            stroke-width: 0.5;
+        }
+        .airport {
+            stroke: #fff;
+            stroke-width: 2;
+        }
+        .airport-label {
+            fill: #e2e8f0;
+            font-size: 12px;
+            font-weight: 600;
+            text-shadow: 
+                -1px -1px 0 #0f172a,
+                1px -1px 0 #0f172a,
+                -1px 1px 0 #0f172a,
+                1px 1px 0 #0f172a,
+                0 0 4px #0f172a;
+        }
+        .global-settings {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1>✈️ Great Circle Airline Route Mapper</h1>
 
-<header>
-  <h1>N2908T - Aero Commander 200</h1>
-  <p>Presentation for EAA AirVenture Oshkosh 2025</p>
-</header>
+```
+    <div class="controls">
+        <div class="global-settings">
+            <h3 style="margin-bottom: 15px; color: #60a5fa;">Global Settings</h3>
+            
+            <div style="margin-bottom: 25px;">
+                <h4 style="color: #94a3b8; font-size: 0.95em; margin-bottom: 12px; font-weight: 600;">Map Settings</h4>
+                <div class="settings-grid">
+                    <div>
+                        <label for="projection">Map Projection</label>
+                        <select id="projection">
+                            <optgroup label="Azimuthal">
+                                <option value="orthographic">Orthographic</option>
+                                <option value="stereographic">Stereographic</option>
+                                <option value="azimuthalEquidistant">Azimuthal Equidistant</option>
+                                <option value="azimuthalEqualArea">Azimuthal Equal Area</option>
+                                <option value="gnomonic">Gnomonic</option>
+                            </optgroup>
+                            <optgroup label="Cylindrical/Pseudo-cylindrical">
+                                <option value="equirectangular">Equirectangular</option>
+                                <option value="mercator">Mercator</option>
+                                <option value="naturalEarth">Natural Earth</option>
+                                <option value="winkelTripel">Winkel Tripel</option>
+                                <option value="robinson">Robinson</option>
+                            </optgroup>
+                            <optgroup label="Conic">
+                                <option value="lambertConformal">Lambert Conformal Conic</option>
+                                <option value="albers">Albers Equal Area Conic</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="bgColor">Window Background</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="bgColor" value="#1e293b" onchange="updateMapColors()">
+                            <span class="color-value" id="bgColorValue">#1e293b</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="waterColor">Ocean/Water Color</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="waterColor" value="#1e3a5f" onchange="updateMapColors()">
+                            <span class="color-value" id="waterColorValue">#1e3a5f</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="landColor">Land Color</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="landColor" value="#475569" onchange="updateMapColors()">
+                            <span class="color-value" id="landColorValue">#475569</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #334155;">
+                    <h5 style="color: #94a3b8; font-size: 0.85em; margin-bottom: 10px; font-weight: 600;">Projection Border</h5>
+                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; align-items: start;">
+                        <div>
+                            <label>
+                                <input type="checkbox" id="showBorder" checked onchange="toggleBorder()" style="width: auto; margin-right: 8px;">
+                                Show Border
+                            </label>
+                        </div>
+                        <div>
+                            <label for="borderColor">Border Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="borderColor" value="#60a5fa" onchange="updateMapColors()">
+                                <span class="color-value" id="borderColorValue">#60a5fa</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #334155;">
+                    <h5 style="color: #94a3b8; font-size: 0.85em; margin-bottom: 10px; font-weight: 600;">Graticule</h5>
+                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; align-items: start;">
+                        <div>
+                            <label>
+                                <input type="checkbox" id="showGraticule" checked onchange="toggleGraticule()" style="width: auto; margin-right: 8px;">
+                                Show Graticule
+                            </label>
+                        </div>
+                        <div>
+                            <label for="graticuleColor">Graticule Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="graticuleColor" value="#334155" onchange="updateMapColors()">
+                                <span class="color-value" id="graticuleColorValue">#334155</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h4 style="color: #94a3b8; font-size: 0.95em; margin-bottom: 12px; font-weight: 600;">Label Settings</h4>
+                <div class="settings-grid">
+                    <div>
+                        <label>
+                            <input type="checkbox" id="showLabels" checked onchange="redrawAll()" style="width: auto; margin-right: 8px;">
+                            Show Airport Labels
+                        </label>
+                        <select id="labelType" onchange="redrawAll()" style="margin-top: 8px;">
+                            <option value="code">Code</option>
+                            <option value="city">City</option>
+                            <option value="both">Both</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="labelPosition">Label Position</label>
+                        <select id="labelPosition" onchange="redrawAll()">
+                            <option value="top">Top</option>
+                            <option value="bottom">Bottom</option>
+                            <option value="left">Left</option>
+                            <option value="right">Right</option>
+                            <option value="center">Center</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="labelSize">Label Size</label>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                            <input type="range" id="labelSize" min="8" max="24" value="12" step="1" onchange="redrawAll()" style="flex: 1; cursor: pointer;">
+                            <span id="labelSizeValue" style="font-size: 0.9em; min-width: 35px;">12px</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Label Positioning</label>
+                        <button onclick="resetLabelPositions()" style="width: 100%; padding: 8px; font-size: 0.9em; margin-top: 5px;">Reset Label Positions</button>
+                        <div class="helper-text" style="margin-top: 8px;">Hold Shift + drag to reposition labels</div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<main>
-
-  <section>
-    <h2>Aircraft Overview</h2>
-    <p>
-      "The best airplane ever built"? Maybe!
-      This Meyers 200 has been so much fun to fly over the past year of ownership. It is a 
-      high‑performance, all‑metal, four‑seat aircraft built with extraordinary craftsmanship.
-    </p>
-    <ul>
-      <li>Model Year: 1966</li>
-      <li>Engine: Continental IO‑550</li>
-      <li>Max Cruise: 225 mph</li>
-      <li>Serial Number: 309</li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>Restoration Details</h2>
-    <p>
-      Work since purchase has focused on restoring the aircraft's mechanical condition. New hoses, resealed struts, new bushings, servicing the hydraulic system, new hardware. 
-    </p>
-  </section>
-
-  <section>
-    <h2>Photos</h2>
-    <div class="photos">
-      <img src="IMG_4129.jpeg" alt="Front view of aircraft">
-      <img src="IMG_0046.jpeg" alt="Cockpit interior">
-      <img src="IMG_0043.jpeg" alt="Tail detail">
-      <!-- Add more <img> tags as needed -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="color: #60a5fa;">Routes & Points</h3>
+        </div>
+        
+        <div id="routeEntries"></div>
+        
+        <div class="button-group">
+            <button class="add-route-btn" onclick="addRouteEntry()">+ Add Route/Point</button>
+            <button onclick="drawAllRoutes()">Draw All Routes</button>
+            <button class="clear-btn" onclick="clearAllRoutes()">Clear All</button>
+        </div>
     </div>
-  </section>
 
-  <section>
-    <h2>Special Features</h2>
-    <p>
-      This Meyers 200 is one of only 123 built and is recognized for its 
-      strength and speed. The aircraft has a unique history including:
-    </p>
-    <ul>
-      <li>Original logbooks with complete maintenance history</li>
-      <li>No damage history</li>
-      <li>Active participation in cross‑country air races - 1966 Powder Puff Derby</li>
-    </ul>
-  </section>
+    <div class="map-container">
+        <svg id="map"></svg>
+    </div>
 
-</main>
+    <div class="info-panel">
+        <h2 style="margin-bottom: 15px;">Route Information</h2>
+        <div id="route-info">Loading airport database...</div>
+        <div class="route-list" id="route-list"></div>
+    </div>
+</div>
 
-<footer>
-  © 2025 Oshkosh Presentation – Meyers 200
-</footer>
+<script>
+    let airports = [];
+    let svg, projection, path, g, width, height;
+    let currentZoom = 1;
+    let routeEntryCount = 0;
+    let drawnRoutes = [];
+    let lastDragPos = null;
+    let labelOffsets = {};
+    let savedViewState = {
+        rotation: [0, 0, 0],
+        translate: null,  // Will be set dynamically based on actual container size
+        zoom: 1
+    };
+
+    function loadAirportDatabase() {
+        if (window.loadedAirportData) {
+            const rawData = window.loadedAirportData;
+            
+            if (Array.isArray(rawData)) {
+                airports = rawData
+                    .filter(airport => airport.iata && airport.latitude && airport.longitude)
+                    .map(airport => ({
+                        code: airport.iata,
+                        name: airport.name || airport.iata,
+                        city: airport.city || '',
+                        country: airport.country || '',
+                        lat: parseFloat(airport.latitude),
+                        lon: parseFloat(airport.longitude)
+                    }))
+                    .filter(a => a.code && !isNaN(a.lat) && !isNaN(a.lon));
+            } else if (typeof rawData === 'object') {
+                airports = Object.entries(rawData)
+                    .filter(([code, airport]) => code && airport.latitude && airport.longitude)
+                    .map(([code, airport]) => ({
+                        code: code,
+                        name: airport.name || code,
+                        city: airport.city || '',
+                        country: airport.country || '',
+                        lat: parseFloat(airport.latitude),
+                        lon: parseFloat(airport.longitude)
+                    }))
+                    .filter(a => a.code && !isNaN(a.lat) && !isNaN(a.lon));
+            }
+            
+            console.log(`✈️ Successfully loaded ${airports.length} airports`);
+            document.getElementById('route-info').textContent = 'Add routes to view information';
+            initMap();
+            addRouteEntry();
+        }
+    }
+
+    window.addEventListener('airportDataLoaded', loadAirportDatabase);
+    
+    let loadAttempted = false;
+    setTimeout(() => {
+        if (window.airportDataReady && airports.length === 0 && !loadAttempted) {
+            loadAttempted = true;
+            loadAirportDatabase();
+        }
+    }, 1000);
+
+    document.getElementById('bgColor').addEventListener('input', (e) => {
+        document.getElementById('bgColorValue').textContent = e.target.value;
+    });
+    document.getElementById('waterColor').addEventListener('input', (e) => {
+        document.getElementById('waterColorValue').textContent = e.target.value;
+    });
+    document.getElementById('landColor').addEventListener('input', (e) => {
+        document.getElementById('landColorValue').textContent = e.target.value;
+    });
+    document.getElementById('borderColor').addEventListener('input', (e) => {
+        document.getElementById('borderColorValue').textContent = e.target.value;
+    });
+    document.getElementById('graticuleColor').addEventListener('input', (e) => {
+        document.getElementById('graticuleColorValue').textContent = e.target.value;
+    });
+    document.getElementById('labelSize').addEventListener('input', (e) => {
+        document.getElementById('labelSizeValue').textContent = e.target.value + 'px';
+    });
+
+    function resetLabelPositions() {
+        labelOffsets = {};
+        redrawAll();
+    }
+
+    function addRouteEntry() {
+        const id = ++routeEntryCount;
+        const container = document.getElementById('routeEntries');
+        
+        const colors = ['#f59e0b', '#ef4444', '#10b981', '#8b5cf6', '#ec4899', '#f97316'];
+        const colorIndex = (id - 1) % colors.length;
+        
+        const entry = document.createElement('div');
+        entry.className = 'route-entry';
+        entry.id = `route-entry-${id}`;
+        entry.style.borderLeftColor = colors[colorIndex];
+        entry.innerHTML = `
+            <div class="route-header" draggable="true">
+                <span class="route-number">Group ${id}</span>
+                <button class="remove-route" onclick="removeRouteEntry(${id})">Remove</button>
+            </div>
+            <div class="input-wrapper">
+                <label>Route or Points</label>
+                <input type="text" id="route-input-${id}" placeholder="e.g., JFK-LHR or LAX, JFK, ATL">
+                <div class="helper-text">Connected: LAX-ATL-ORD • Points: LAX, JFK • Mixed: LAX-ATL, JFK</div>
+            </div>
+            <div class="style-grid">
+                <div class="style-item">
+                    <label>Line Color</label>
+                    <div class="color-input-wrapper">
+                        <input type="color" id="line-color-${id}" value="${colors[colorIndex]}" onchange="updateEntryColor(${id})">
+                        <span class="color-value" id="line-color-value-${id}">${colors[colorIndex]}</span>
+                    </div>
+                </div>
+                <div class="style-item">
+                    <label>Line Width</label>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                        <input type="range" id="line-width-${id}" min="1" max="8" value="2.5" step="0.5" style="flex: 1; cursor: pointer;">
+                        <span id="line-width-value-${id}" style="font-size: 0.9em; min-width: 35px;">2.5</span>
+                    </div>
+                </div>
+                <div class="style-item">
+                    <label>Line Style</label>
+                    <select id="line-style-${id}">
+                        <option value="solid">Solid</option>
+                        <option value="dashed">Dashed</option>
+                        <option value="dotted">Dotted</option>
+                    </select>
+                </div>
+                <div class="style-item">
+                    <label>
+                        <input type="checkbox" id="show-markers-${id}" checked style="width: auto; margin-right: 8px;">
+                        Show Markers
+                    </label>
+                </div>
+                <div class="style-item">
+                    <label>Marker Color</label>
+                    <div class="color-input-wrapper">
+                        <input type="color" id="marker-color-${id}" value="${colors[colorIndex]}" onchange="updateEntryColor(${id})">
+                        <span class="color-value" id="marker-color-value-${id}">${colors[colorIndex]}</span>
+                    </div>
+                </div>
+                <div class="style-item">
+                    <label>Marker Size</label>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                        <input type="range" id="marker-size-${id}" min="3" max="12" value="6" step="1" style="flex: 1; cursor: pointer;">
+                        <span id="marker-size-value-${id}" style="font-size: 0.9em; min-width: 35px;">6</span>
+                    </div>
+                </div>
+                <div class="style-item">
+                    <label>Marker Shape</label>
+                    <select id="marker-shape-${id}">
+                        <option value="circle">Circle</option>
+                        <option value="square">Square</option>
+                        <option value="diamond">Diamond</option>
+                        <option value="triangle">Triangle</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(entry);
+        
+        // Add drag and drop event listeners to the header only
+        const header = entry.querySelector('.route-header');
+        header.addEventListener('dragstart', handleDragStart);
+        header.addEventListener('dragend', handleDragEnd);
+        entry.addEventListener('dragover', handleDragOver);
+        entry.addEventListener('drop', handleDrop);
+        entry.addEventListener('dragenter', handleDragEnter);
+        entry.addEventListener('dragleave', handleDragLeave);
+        
+        // Add change listeners for dynamic updates
+        document.getElementById(`line-color-${id}`).addEventListener('input', (e) => {
+            document.getElementById(`line-color-value-${id}`).textContent = e.target.value;
+            if (drawnRoutes.length > 0) drawAllRoutes();
+        });
+        document.getElementById(`marker-color-${id}`).addEventListener('input', (e) => {
+            document.getElementById(`marker-color-value-${id}`).textContent = e.target.value;
+            if (drawnRoutes.length > 0) drawAllRoutes();
+        });
+        document.getElementById(`line-width-${id}`).addEventListener('input', (e) => {
+            document.getElementById(`line-width-value-${id}`).textContent = e.target.value;
+            if (drawnRoutes.length > 0) drawAllRoutes();
+        });
+        document.getElementById(`line-style-${id}`).addEventListener('change', () => {
+            if (drawnRoutes.length > 0) drawAllRoutes();
+        });
+        document.getElementById(`show-markers-${id}`).addEventListener('change', () => {
+            if (drawnRoutes.length > 0) drawAllRoutes();
+        });
+        document.getElementById(`marker-size-${id}`).addEventListener('input', (e) => {
+            document.getElementById(`marker-size-value-${id}`).textContent = e.target.value;
+            if (drawnRoutes.length > 0) drawAllRoutes();
+        });
+        document.getElementById(`marker-shape-${id}`).addEventListener('change', () => {
+            if (drawnRoutes.length > 0) drawAllRoutes();
+        });
+    }
+
+    let draggedElement = null;
+    let dragStartY = 0;
+    let isDragging = false;
+
+    function handleDragStart(e) {
+        // Find the parent route-entry element
+        draggedElement = this.closest('.route-entry');
+        dragStartY = e.clientY;
+        isDragging = false;
+        draggedElement.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', draggedElement.innerHTML);
+    }
+
+    function handleDragEnd(e) {
+        if (draggedElement) {
+            draggedElement.classList.remove('dragging');
+        }
+        document.querySelectorAll('.route-entry').forEach(entry => {
+            entry.classList.remove('drag-over');
+        });
+    }
+
+    function handleDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        e.dataTransfer.dropEffect = 'move';
+        return false;
+    }
+
+    function handleDragEnter(e) {
+        if (this !== draggedElement) {
+            this.classList.add('drag-over');
+        }
+    }
+
+    function handleDragLeave(e) {
+        this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        if (e.stopPropagation) {
+            e.stopPropagation();
+        }
+
+        if (draggedElement !== this) {
+            const container = document.getElementById('routeEntries');
+            const allEntries = [...container.children];
+            const draggedIndex = allEntries.indexOf(draggedElement);
+            const targetIndex = allEntries.indexOf(this);
+
+            if (draggedIndex < targetIndex) {
+                container.insertBefore(draggedElement, this.nextSibling);
+            } else {
+                container.insertBefore(draggedElement, this);
+            }
+            
+            // Redraw routes if any are currently drawn
+            if (drawnRoutes.length > 0) {
+                drawAllRoutes();
+            }
+        }
+
+        return false;
+    }
+
+    function updateEntryColor(id) {
+        const entry = document.getElementById(`route-entry-${id}`);
+        const lineColor = document.getElementById(`line-color-${id}`).value;
+        if (entry) {
+            entry.style.borderLeftColor = lineColor;
+        }
+    }
+
+    function removeRouteEntry(id) {
+        const entry = document.getElementById(`route-entry-${id}`);
+        if (entry) {
+            entry.remove();
+            // Redraw routes if any are currently drawn
+            if (drawnRoutes.length > 0) {
+                drawAllRoutes();
+            }
+        }
+    }
+
+    function initMap() {
+        const container = document.getElementById('map');
+        width = container.clientWidth;
+        height = 788;
+
+        d3.select("#map").selectAll("*").remove();
+
+        svg = d3.select("#map")
+            .attr("width", width)
+            .attr("height", height);
+
+        g = svg.append("g");
+
+        updateProjection();
+        loadWorldMap();
+    }
+
+    function isPlanarProjection(projType) {
+        return projType === 'equirectangular' || 
+               projType === 'mercator' || 
+               projType === 'naturalEarth' ||
+               projType === 'lambertConformal' ||
+               projType === 'albers' ||
+               projType === 'winkelTripel' ||
+               projType === 'robinson';
+    }
+
+    function updateProjection() {
+        const projType = document.getElementById('projection').value;
+        const previousProjType = projection ? 
+            (projection.parallels ? 'conic' : (isPlanarProjection(projType) ? 'planar' : 'azimuthal')) : null;
+        
+        // Save current view state before changing projection
+        if (projection) {
+            savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
+            savedViewState.translate = projection.translate ? projection.translate() : [width / 2, height / 2];
+            savedViewState.zoom = currentZoom;
+        }
+        
+        // Determine projection types
+        const isConic = projType === 'lambertConformal' || projType === 'albers';
+        const isAzimuthal = !isPlanarProjection(projType) && !isConic;
+        const wasPlanarProjection = previousProjType === 'planar';
+        const wasConicProjection = previousProjType === 'conic';
+        
+        // Determine the correct translate value
+        let centerTranslate = savedViewState.translate || [width / 2, height / 2];
+        
+        // Reset translate to center when:
+        // 1. Switching from conic to planar/azimuthal
+        // 2. Switching from planar to azimuthal (planar uses translate for vertical pan, azimuthal should always be centered)
+        if ((wasConicProjection && !isConic) || (wasPlanarProjection && isAzimuthal)) {
+            centerTranslate = [width / 2, height / 2];
+        }
+        
+        // Reset zoom when switching from planar to azimuthal to avoid off-screen issues
+        if (wasPlanarProjection && isAzimuthal) {
+            currentZoom = 1;
+        }
+        
+        // Don't reset zoom and drag state
+        if (svg) {
+            svg.on('.zoom', null);
+            svg.on('wheel', null);
+            svg.on('.drag', null);
+        }
+        
+        if (g) {
+            g.attr('transform', null);
+        }
+        
+        switch(projType) {
+            case 'orthographic':
+                projection = d3.geoOrthographic()
+                    .scale(Math.min(width, height) / 2.2 * currentZoom)
+                    .translate([width / 2, height / 2])
+                    .rotate(savedViewState.rotation)
+                    .clipAngle(90);
+                break;
+            case 'equirectangular':
+                projection = d3.geoEquirectangular()
+                    .scale(width / (2 * Math.PI) * currentZoom)
+                    .translate(centerTranslate)
+                    .rotate([savedViewState.rotation[0], 0, 0]);
+                break;
+            case 'mercator':
+                projection = d3.geoMercator()
+                    .scale(width / (2 * Math.PI) * currentZoom)
+                    .translate(centerTranslate)
+                    .rotate([savedViewState.rotation[0], 0, 0]);
+                break;
+            case 'naturalEarth':
+                projection = d3.geoNaturalEarth1()
+                    .scale(width / 5.5 * currentZoom)
+                    .translate(centerTranslate)
+                    .rotate([savedViewState.rotation[0], 0, 0]);
+                break;
+            case 'azimuthalEquidistant':
+                projection = d3.geoAzimuthalEquidistant()
+                    .scale(width / 4 * currentZoom)
+                    .translate([width / 2, height / 2])
+                    .rotate(savedViewState.rotation)
+                    .clipAngle(180);
+                break;
+            case 'stereographic':
+                projection = d3.geoStereographic()
+                    .scale(width / 4 * currentZoom)
+                    .translate([width / 2, height / 2])
+                    .rotate(savedViewState.rotation)
+                    .clipAngle(120);
+                break;
+            case 'azimuthalEqualArea':
+                projection = d3.geoAzimuthalEqualArea()
+                    .scale(width / 4 * currentZoom)
+                    .translate([width / 2, height / 2])
+                    .rotate(savedViewState.rotation)
+                    .clipAngle(180);
+                break;
+            case 'lambertConformal':
+                projection = d3.geoConicConformal()
+                    .parallels([20, 60])
+                    .scale(width / 4 * currentZoom)
+                    .translate(centerTranslate)
+                    .rotate([savedViewState.rotation[0], 0, 0]);
+                break;
+            case 'albers':
+                projection = d3.geoAlbers()
+                    .scale(width / 5 * currentZoom)
+                    .translate(centerTranslate)
+                    .rotate([savedViewState.rotation[0], 0, 0]);
+                break;
+            case 'gnomonic':
+                projection = d3.geoGnomonic()
+                    .scale(width / 4 * currentZoom)
+                    .translate([width / 2, height / 2])
+                    .rotate(savedViewState.rotation)
+                    .clipAngle(60);
+                break;
+            case 'winkelTripel':
+                projection = d3.geoWinkel3()
+                    .scale(width / 5.5 * currentZoom)
+                    .translate(centerTranslate)
+                    .rotate([savedViewState.rotation[0], 0, 0]);
+                break;
+            case 'robinson':
+                projection = d3.geoRobinson()
+                    .scale(width / 5.5 * currentZoom)
+                    .translate(centerTranslate)
+                    .rotate([savedViewState.rotation[0], 0, 0]);
+                break;
+        }
+
+        path = d3.geoPath().projection(projection);
+    }
+
+    function getBaseScale() {
+        const projType = document.getElementById('projection').value;
+        switch(projType) {
+            case 'orthographic':
+                return Math.min(width, height) / 2.2;
+            case 'equirectangular':
+                return width / (2 * Math.PI);
+            case 'mercator':
+                return width / (2 * Math.PI);
+            case 'naturalEarth':
+                return width / 5.5;
+            case 'azimuthalEquidistant':
+                return width / 4;
+            case 'stereographic':
+                return width / 4;
+            case 'azimuthalEqualArea':
+                return width / 4;
+            case 'lambertConformal':
+                return width / 4;
+            case 'albers':
+                return width / 5;
+            case 'gnomonic':
+                return width / 4;
+            case 'winkelTripel':
+                return width / 5.5;
+            case 'robinson':
+                return width / 5.5;
+            default:
+                return width / 2.2;
+        }
+    }
+
+    function loadWorldMap() {
+        d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
+            .then(world => {
+                g.selectAll("*").remove();
+
+                const showBorder = document.getElementById('showBorder').checked;
+                
+                // Draw sphere fill first (as background water/ocean)
+                if (showBorder) {
+                    g.append("path")
+                        .datum({type: "Sphere"})
+                        .attr("class", "sphere")
+                        .attr("d", path)
+                        .style("fill", document.getElementById('waterColor').value);
+                }
+
+                const showGraticule = document.getElementById('showGraticule').checked;
+                
+                if (showGraticule) {
+                    g.append("path")
+                        .datum(d3.geoGraticule())
+                        .attr("class", "graticule")
+                        .attr("d", path)
+                        .style("stroke", document.getElementById('graticuleColor').value);
+                }
+
+                g.append("path")
+                    .datum(topojson.feature(world, world.objects.countries))
+                    .attr("class", "land")
+                    .attr("d", path)
+                    .style("fill", document.getElementById('landColor').value);
+
+                // Draw sphere border on top of everything
+                if (showBorder) {
+                    g.append("path")
+                        .datum({type: "Sphere"})
+                        .attr("class", "sphere-border")
+                        .attr("d", path)
+                        .style("stroke", document.getElementById('borderColor').value);
+                }
+
+                const projType = document.getElementById('projection').value;
+                
+                if (isPlanarProjection(projType)) {
+                    svg.on('wheel', (event) => {
+                        event.preventDefault();
+                        
+                        const delta = -event.deltaY;
+                        const scaleFactor = delta > 0 ? 1.1 : 0.9;
+                        currentZoom *= scaleFactor;
+                        currentZoom = Math.max(0.5, Math.min(8, currentZoom));
+                        
+                        const baseScale = getBaseScale();
+                        projection.scale(baseScale * currentZoom);
+                        
+                        g.selectAll('path').attr('d', path);
+                        redrawAll();
+                    });
+
+                    const drag = d3.drag()
+                        .filter((event) => !event.shiftKey)
+                        .on('drag', (event) => {
+                            const currentRotate = projection.rotate();
+                            const currentTranslate = projection.translate();
+                            const sensitivity = 0.25;
+                            
+                            const newLongitude = currentRotate[0] + event.dx * sensitivity;
+                            projection.rotate([newLongitude, 0, 0]);
+                            
+                            const newTranslateY = currentTranslate[1] + event.dy;
+                            
+                            // Scale the pan limit based on zoom level - allow more panning when zoomed in
+                            const maxPanY = height * 0.7 * Math.max(1, currentZoom);
+                            const minY = height / 2 - maxPanY;
+                            const maxY = height / 2 + maxPanY;
+                            const clampedTranslateY = Math.max(minY, Math.min(maxY, newTranslateY));
+                            
+                            projection.translate([currentTranslate[0], clampedTranslateY]);
+                            
+                            g.selectAll('path').attr('d', path);
+                            redrawAll();
+                        });
+                    svg.call(drag);
+                } else {
+                    svg.on('wheel', (event) => {
+                        event.preventDefault();
+                        
+                        const delta = -event.deltaY;
+                        const scaleFactor = delta > 0 ? 1.1 : 0.9;
+                        currentZoom *= scaleFactor;
+                        currentZoom = Math.max(0.5, Math.min(8, currentZoom));
+                        
+                        const baseScale = getBaseScale();
+                        projection.scale(baseScale * currentZoom);
+                        
+                        g.selectAll('path').attr('d', path);
+                        redrawAll();
+                    });
+
+                    const drag = d3.drag()
+                        .filter((event) => !event.shiftKey)
+                        .on('drag', (event) => {
+                            const rotate = projection.rotate();
+                            const sensitivity = projType === 'orthographic' ? 0.5 : 0.3;
+                            projection.rotate([
+                                rotate[0] + event.dx * sensitivity, 
+                                rotate[1] - event.dy * sensitivity
+                            ]);
+                            g.selectAll('path').attr('d', path);
+                            redrawAll();
+                        });
+                    svg.call(drag);
+                }
+                
+                if (drawnRoutes.length > 0) {
+                    redrawAll();
+                }
+            });
+    }
+
+    function redrawAll() {
+        g.selectAll('.path').remove();
+        g.selectAll('.airport').remove();
+        g.selectAll('.airport-label').remove();
+        
+        drawnRoutes.forEach(routeData => {
+            drawRouteData(routeData);
+        });
+    }
+
+    function drawRouteData(routeData) {
+        const { routes, points, style } = routeData;
+        
+        routes.forEach(airportList => {
+            for (let i = 0; i < airportList.length - 1; i++) {
+                const origin = airportList[i];
+                const destination = airportList[i + 1];
+                
+                const interpolate = d3.geoInterpolate(
+                    [origin.lon, origin.lat],
+                    [destination.lon, destination.lat]
+                );
+                const pathPoints = d3.range(0, 1.01, 0.01).map(interpolate);
+                
+                g.append("path")
+                    .datum({type: "LineString", coordinates: pathPoints})
+                    .attr("class", "path")
+                    .attr("d", path)
+                    .style("stroke", style.lineColor)
+                    .style("stroke-width", style.lineWidth)
+                    .style("stroke-dasharray", 
+                        style.lineStyle === 'dashed' ? `${style.lineWidth * 4},${style.lineWidth * 2}` : 
+                        style.lineStyle === 'dotted' ? `${style.lineWidth * 0.5},${style.lineWidth * 1.5}` : 'none');
+            }
+        });
+        
+        const allAirports = new Set();
+        routes.forEach(route => route.forEach(apt => allAirports.add(apt)));
+        points.forEach(apt => allAirports.add(apt));
+        
+        const showLabels = document.getElementById('showLabels').checked;
+        const projType = document.getElementById('projection').value;
+        
+        allAirports.forEach(airport => {
+            const coords = projection([airport.lon, airport.lat]);
+            if (!coords || isNaN(coords[0]) || isNaN(coords[1])) return;
+            
+            // Check if point is visible for projections with clipping
+            if (projType === 'orthographic' || projType === 'stereographic' || projType === 'gnomonic') {
+                const distance = d3.geoDistance([airport.lon, airport.lat], projection.invert(projection.translate()));
+                const clipAngle = projection.clipAngle ? projection.clipAngle() * Math.PI / 180 : Math.PI / 2;
+                if (distance > clipAngle) return;
+            }
+            
+            const size = style.markerSize;
+            
+            // Only draw marker if showMarkers is true
+            if (style.showMarkers) {
+                if (style.markerShape === 'circle') {
+                    g.append('circle')
+                        .datum(airport)
+                        .attr('class', 'airport')
+                        .attr('cx', coords[0])
+                        .attr('cy', coords[1])
+                        .attr('r', size)
+                        .style('fill', style.markerColor);
+                } else if (style.markerShape === 'square') {
+                    const s = size * 1.5;
+                    g.append('rect')
+                        .datum(airport)
+                        .attr('class', 'airport')
+                        .attr('x', coords[0] - s)
+                        .attr('y', coords[1] - s)
+                        .attr('width', s * 2)
+                        .attr('height', s * 2)
+                        .style('fill', style.markerColor);
+                } else if (style.markerShape === 'diamond') {
+                    const s = size * 1.8;
+                    g.append('path')
+                        .datum(airport)
+                        .attr('class', 'airport')
+                        .attr('d', `M ${coords[0]} ${coords[1] - s} L ${coords[0] + s} ${coords[1]} L ${coords[0]} ${coords[1] + s} L ${coords[0] - s} ${coords[1]} Z`)
+                        .style('fill', style.markerColor);
+                } else if (style.markerShape === 'triangle') {
+                    const s = size * 1.8;
+                    g.append('path')
+                        .datum(airport)
+                        .attr('class', 'airport')
+                        .attr('d', `M ${coords[0]} ${coords[1] - s} L ${coords[0] + s} ${coords[1] + s} L ${coords[0] - s} ${coords[1] + s} Z`)
+                        .style('fill', style.markerColor);
+                }
+            }
+            
+            if (showLabels) {
+                const labelSize = document.getElementById('labelSize').value;
+                const labelPosition = document.getElementById('labelPosition').value;
+                const offset = labelOffsets[airport.code] || { x: 0, y: 0 };
+                
+                let xPos = coords[0] + offset.x;
+                let yPos = coords[1] + offset.y;
+                let anchor = "middle";
+                
+                // Apply position preset (only if no custom offset has been applied)
+                if (!labelOffsets[airport.code]) {
+                    switch(labelPosition) {
+                        case 'top':
+                            yPos = coords[1] - 12 - size;
+                            anchor = "middle";
+                            break;
+                        case 'bottom':
+                            yPos = coords[1] + 12 + size;
+                            anchor = "middle";
+                            break;
+                        case 'left':
+                            xPos = coords[0] - 12 - size;
+                            yPos = coords[1] + 4;
+                            anchor = "end";
+                            break;
+                        case 'right':
+                            xPos = coords[0] + 12 + size;
+                            yPos = coords[1] + 4;
+                            anchor = "start";
+                            break;
+                        case 'center':
+                            yPos = coords[1] + 4;
+                            anchor = "middle";
+                            break;
+                    }
+                } else {
+                    // If custom offset exists, use the original top positioning as base
+                    yPos = coords[1] - 12 - size + offset.y;
+                }
+                
+                const label = g.append("text")
+                    .datum(airport)
+                    .attr("class", "airport-label")
+                    .attr("x", xPos)
+                    .attr("y", yPos)
+                    .attr("text-anchor", anchor)
+                    .style("font-size", labelSize + "px")
+                    .style("cursor", "move")
+                    .style("user-select", "none")
+                    .text(getLabelText(airport));
+                
+                const labelDrag = d3.drag()
+                    .filter((event) => event.shiftKey)
+                    .on('start', (event) => {
+                        event.sourceEvent.stopPropagation();
+                    })
+                    .on('drag', (event) => {
+                        event.sourceEvent.stopPropagation();
+                        
+                        if (!labelOffsets[airport.code]) {
+                            labelOffsets[airport.code] = { x: 0, y: 0 };
+                        }
+                        labelOffsets[airport.code].x += event.dx;
+                        labelOffsets[airport.code].y += event.dy;
+                        
+                        d3.select(event.sourceEvent.target)
+                            .attr('x', coords[0] + labelOffsets[airport.code].x)
+                            .attr('y', coords[1] - 12 - size + labelOffsets[airport.code].y);
+                    })
+                    .on('end', (event) => {
+                        event.sourceEvent.stopPropagation();
+                    });
+                
+                label.call(labelDrag);
+            }
+        });
+    }
+
+    function vincentyDistance(lat1, lon1, lat2, lon2) {
+        const a = 6378137.0;
+        const b = 6356752.314245;
+        const f = 1 / 298.257223563;
+
+        const L = (lon2 - lon1) * Math.PI / 180;
+        const U1 = Math.atan((1 - f) * Math.tan(lat1 * Math.PI / 180));
+        const U2 = Math.atan((1 - f) * Math.tan(lat2 * Math.PI / 180));
+        const sinU1 = Math.sin(U1), cosU1 = Math.cos(U1);
+        const sinU2 = Math.sin(U2), cosU2 = Math.cos(U2);
+
+        let lambda = L, lambdaP, iterLimit = 100;
+        let cosSqAlpha, sinSigma, cos2SigmaM, cosSigma, sigma;
+
+        do {
+            const sinLambda = Math.sin(lambda), cosLambda = Math.cos(lambda);
+            sinSigma = Math.sqrt((cosU2 * sinLambda) * (cosU2 * sinLambda) +
+                (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) * (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda));
+            
+            if (sinSigma === 0) return 0;
+            
+            cosSigma = sinU1 * sinU2 + cosU1 * cosU2 * cosLambda;
+            sigma = Math.atan2(sinSigma, cosSigma);
+            const sinAlpha = cosU1 * cosU2 * sinLambda / sinSigma;
+            cosSqAlpha = 1 - sinAlpha * sinAlpha;
+            cos2SigmaM = cosSigma - 2 * sinU1 * sinU2 / cosSqAlpha;
+            
+            if (isNaN(cos2SigmaM)) cos2SigmaM = 0;
+            
+            const C = f / 16 * cosSqAlpha * (4 + f * (4 - 3 * cosSqAlpha));
+            lambdaP = lambda;
+            lambda = L + (1 - C) * f * sinAlpha *
+                (sigma + C * sinSigma * (cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)));
+        } while (Math.abs(lambda - lambdaP) > 1e-12 && --iterLimit > 0);
+
+        if (iterLimit === 0) return NaN;
+
+        const uSq = cosSqAlpha * (a * a - b * b) / (b * b);
+        const A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
+        const B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
+        const deltaSigma = B * sinSigma * (cos2SigmaM + B / 4 * (cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM) -
+            B / 6 * cos2SigmaM * (-3 + 4 * sinSigma * sinSigma) * (-3 + 4 * cos2SigmaM * cos2SigmaM)));
+
+        return b * A * (sigma - deltaSigma);
+    }
+
+    function parseRouteInput(input) {
+        const items = input.split(',').map(r => r.trim()).filter(r => r.length > 0);
+        const routes = [];
+        const singlePoints = [];
+        
+        for (let item of items) {
+            const codes = item.toUpperCase().split('-').map(c => c.trim()).filter(c => c.length > 0);
+            
+            if (codes.length === 1) {
+                const airport = airports.find(a => a.code === codes[0]);
+                if (!airport) {
+                    alert(`Airport code "${codes[0]}" not found.`);
+                    return null;
+                }
+                singlePoints.push(airport);
+            } else if (codes.length >= 2) {
+                const airportList = [];
+                for (let code of codes) {
+                    const airport = airports.find(a => a.code === code);
+                    if (!airport) {
+                        alert(`Airport code "${code}" not found.`);
+                        return null;
+                    }
+                    airportList.push(airport);
+                }
+                routes.push(airportList);
+            }
+        }
+        
+        if (routes.length === 0 && singlePoints.length === 0) {
+            return null;
+        }
+        
+        return { routes: routes, points: singlePoints };
+    }
+
+    function getLabelText(airport) {
+        const labelType = document.getElementById('labelType').value;
+        switch(labelType) {
+            case 'code':
+                return airport.code;
+            case 'city':
+                return airport.city;
+            case 'both':
+                return `${airport.code} - ${airport.city}`;
+            default:
+                return airport.code;
+        }
+    }
+
+    function toggleBorder() {
+        const showBorder = document.getElementById('showBorder').checked;
+        const sphereFill = g.select('.sphere');
+        const sphereBorder = g.select('.sphere-border');
+        
+        if (sphereFill.empty() || sphereBorder.empty()) {
+            // Elements don't exist, need to redraw map to add them
+            if (showBorder) {
+                updateProjection();
+                loadWorldMap();
+            }
+        } else {
+            // Elements exist, just toggle visibility
+            sphereFill.style('display', showBorder ? 'block' : 'none');
+            sphereBorder.style('display', showBorder ? 'block' : 'none');
+        }
+    }
+
+    function toggleGraticule() {
+        const showGraticule = document.getElementById('showGraticule').checked;
+        const graticule = g.select('.graticule');
+        
+        if (graticule.empty()) {
+            // Graticule doesn't exist, need to redraw map to add it
+            if (showGraticule) {
+                updateProjection();
+                loadWorldMap();
+            }
+        } else {
+            // Graticule exists, just toggle visibility
+            graticule.style('display', showGraticule ? 'block' : 'none');
+        }
+    }
+
+    function updateMapColors() {
+        const bgColor = document.getElementById('bgColor').value;
+        const waterColor = document.getElementById('waterColor').value;
+        const landColor = document.getElementById('landColor').value;
+        const borderColor = document.getElementById('borderColor').value;
+        const graticuleColor = document.getElementById('graticuleColor').value;
+        
+        document.querySelector('.map-container').style.background = bgColor;
+        g.selectAll('.sphere').style('fill', waterColor);
+        g.selectAll('.land').style('fill', landColor);
+        g.selectAll('.sphere-border').style('stroke', borderColor);
+        g.selectAll('.graticule').style('stroke', graticuleColor);
+    }
+
+    function drawAllRoutes() {
+        drawnRoutes = [];
+        
+        const entries = document.querySelectorAll('.route-entry');
+        let hasValidRoute = false;
+        
+        entries.forEach(entry => {
+            const id = entry.id.split('-')[2];
+            const input = document.getElementById(`route-input-${id}`).value;
+            
+            if (!input.trim()) return;
+            
+            const parsedData = parseRouteInput(input);
+            if (!parsedData) return;
+            
+            hasValidRoute = true;
+            
+            const style = {
+                lineColor: document.getElementById(`line-color-${id}`).value,
+                lineWidth: document.getElementById(`line-width-${id}`).value,
+                lineStyle: document.getElementById(`line-style-${id}`).value,
+                showMarkers: document.getElementById(`show-markers-${id}`).checked,
+                markerColor: document.getElementById(`marker-color-${id}`).value,
+                markerSize: parseFloat(document.getElementById(`marker-size-${id}`).value),
+                markerShape: document.getElementById(`marker-shape-${id}`).value
+            };
+            
+            drawnRoutes.push({
+                routes: parsedData.routes,
+                points: parsedData.points,
+                style: style,
+                id: id
+            });
+        });
+        
+        if (!hasValidRoute) {
+            alert('Please enter at least one route or point.');
+            return;
+        }
+        
+        // Save current view before redrawing
+        if (projection) {
+            savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
+            savedViewState.translate = projection.translate ? projection.translate() : null;
+            savedViewState.zoom = currentZoom;
+        }
+        
+        updateProjection();
+        loadWorldMap();
+        
+        setTimeout(() => {
+            let totalDistance = 0;
+            let allRouteInfo = [];
+            let routeDistances = {};
+            let routeAirports = {};
+            let routeFlights = {};
+            let uniqueAirports = new Set();
+            let totalSegments = 0;
+            
+            drawnRoutes.forEach((routeData, idx) => {
+                let routeTotal = 0;
+                let routeAirportSet = new Set();
+                let routeSegmentCount = 0;
+                
+                routeData.routes.forEach(airportList => {
+                    airportList.forEach(apt => {
+                        uniqueAirports.add(apt.code);
+                        routeAirportSet.add(apt.code);
+                    });
+                    
+                    for (let i = 0; i < airportList.length - 1; i++) {
+                        const origin = airportList[i];
+                        const destination = airportList[i + 1];
+                        
+                        totalSegments++;
+                        routeSegmentCount++;
+                        
+                        const distMeters = vincentyDistance(
+                            origin.lat, origin.lon,
+                            destination.lat, destination.lon
+                        );
+
+                        const miles = (distMeters * 0.000621371).toFixed(0);
+                        const km = (distMeters / 1000).toFixed(0);
+                        const nm = (distMeters * 0.000539957).toFixed(0);
+
+                        totalDistance += distMeters;
+                        routeTotal += distMeters;
+
+                        allRouteInfo.push({
+                            routeId: routeData.id,
+                            origin: origin,
+                            destination: destination,
+                            miles: miles,
+                            km: km,
+                            nm: nm,
+                            color: routeData.style.lineColor
+                        });
+                    }
+                });
+                
+                routeData.points.forEach(apt => {
+                    uniqueAirports.add(apt.code);
+                    routeAirportSet.add(apt.code);
+                });
+                
+                routeDistances[routeData.id] = {
+                    total: routeTotal,
+                    color: routeData.style.lineColor
+                };
+                
+                routeAirports[routeData.id] = {
+                    airports: Array.from(routeAirportSet),
+                    color: routeData.style.lineColor
+                };
+                
+                routeFlights[routeData.id] = {
+                    count: routeSegmentCount,
+                    color: routeData.style.lineColor
+                };
+            });
+            
+            let infoHTML = `<strong>${drawnRoutes.length} Group${drawnRoutes.length > 1 ? 's' : ''} Drawn</strong><br>`;
+            infoHTML += `<strong>Airports:</strong> ${uniqueAirports.size} | <strong>Flights:</strong> ${totalSegments}<br>`;
+            
+            if (totalDistance > 0) {
+                const totalMiles = (totalDistance * 0.000621371).toFixed(0);
+                const totalKm = (totalDistance / 1000).toFixed(0);
+                const totalNm = (totalDistance * 0.000539957).toFixed(0);
+                infoHTML += `<strong>Total Distance:</strong> ${Number(totalMiles).toLocaleString()} mi / ${Number(totalKm).toLocaleString()} km / ${Number(totalNm).toLocaleString()} nm<br>`;
+                
+                if (Object.keys(routeDistances).length > 1) {
+                    infoHTML += '<div style="margin-top: 10px;">';
+                    Object.entries(routeDistances).forEach(([routeId, data]) => {
+                        const airportInfo = routeAirports[routeId];
+                        const flightInfo = routeFlights[routeId];
+                        const airportCount = airportInfo.airports.length;
+                        const airportList = airportInfo.airports.join(', ');
+                        const flightCount = flightInfo.count;
+                        
+                        if (data.total > 0) {
+                            const routeMiles = (data.total * 0.000621371).toFixed(0);
+                            const routeKm = (data.total / 1000).toFixed(0);
+                            const routeNm = (data.total * 0.000539957).toFixed(0);
+                            infoHTML += `<div style="color: ${data.color}; margin-left: 10px;">
+                                <strong>Group ${routeId}:</strong> ${Number(routeMiles).toLocaleString()} mi / ${Number(routeKm).toLocaleString()} km / ${Number(routeNm).toLocaleString()} nm<br>
+                                <span style="margin-left: 20px;">${flightCount} Flight${flightCount !== 1 ? 's' : ''} | ${airportCount} Airport${airportCount !== 1 ? 's' : ''} (${airportList})</span>
+                            </div>`;
+                        } else {
+                            infoHTML += `<div style="color: ${data.color}; margin-left: 10px;">
+                                <strong>Group ${routeId}:</strong> ${airportCount} Airport${airportCount !== 1 ? 's' : ''} (${airportList})
+                            </div>`;
+                        }
+                    });
+                    infoHTML += '</div>';
+                }
+            }
+            
+            document.getElementById('route-info').innerHTML = infoHTML;
+
+            let segmentsHTML = '';
+            allRouteInfo.forEach(segment => {
+                segmentsHTML += `
+                    <div class="route-item" style="border-left-color: ${segment.color}">
+                        <div class="route-item-header" style="color: ${segment.color}">Group ${segment.routeId}: ${segment.origin.code} → ${segment.destination.code}</div>
+                        <div>${segment.origin.city} to ${segment.destination.city}</div>
+                        <div class="distance-display">
+                            <div class="distance-item"><span class="distance-value">${Number(segment.miles).toLocaleString()}</span> mi</div>
+                            <div class="distance-item"><span class="distance-value">${Number(segment.km).toLocaleString()}</span> km</div>
+                            <div class="distance-item"><span class="distance-value">${Number(segment.nm).toLocaleString()}</span> nm</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            drawnRoutes.forEach(routeData => {
+                routeData.points.forEach(airport => {
+                    segmentsHTML += `
+                        <div class="route-item" style="border-left-color: ${routeData.style.markerColor}">
+                            <div class="route-item-header" style="color: ${routeData.style.markerColor}">Group ${routeData.id}: ${airport.code}</div>
+                            <div>${airport.name}, ${airport.city}</div>
+                        </div>
+                    `;
+                });
+            });
+            
+            document.getElementById('route-list').innerHTML = segmentsHTML;
+        }, 100);
+    }
+
+    function clearAllRoutes() {
+        document.getElementById('routeEntries').innerHTML = '';
+        routeEntryCount = 0;
+        drawnRoutes = [];
+        document.getElementById('route-info').innerHTML = 'Add routes to view information';
+        document.getElementById('route-list').innerHTML = '';
+        
+        // Save current view before clearing
+        if (projection) {
+            savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
+            savedViewState.translate = projection.translate ? projection.translate() : null;
+            savedViewState.zoom = currentZoom;
+        }
+        
+        updateProjection();
+        loadWorldMap();
+        addRouteEntry();
+    }
+
+    document.getElementById('projection').addEventListener('change', () => {
+        if (drawnRoutes.length > 0) {
+            updateProjection();
+            loadWorldMap();
+        } else {
+            updateProjection();
+            loadWorldMap();
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        if (airports.length > 0) {
+            initMap();
+        }
+    });
+</script>
+```
 
 </body>
 </html>
