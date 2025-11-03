@@ -314,6 +314,14 @@
                 <h4 style="color: #94a3b8; font-size: 0.95em; margin-bottom: 12px; font-weight: 600;">Map Settings</h4>
                 <div class="settings-grid">
                     <div>
+                        <label for="theme">Color Theme</label>
+                        <select id="theme" onchange="applyTheme()">
+                            <option value="dark">Dark</option>
+                            <option value="light">Light</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div>
                         <label for="projection">Map Projection</label>
                         <select id="projection">
                             <optgroup label="Azimuthal">
@@ -470,9 +478,42 @@
     let labelOffsets = {};
     let savedViewState = {
         rotation: [0, 0, 0],
-        translate: null,  // Will be set dynamically based on actual container size
+        translate: null,
         zoom: 1
     };
+    let currentTheme = 'dark';
+
+    function applyTheme() {
+        const theme = document.getElementById('theme').value;
+        currentTheme = theme;
+        
+        if (theme === 'dark') {
+            document.getElementById('bgColor').value = '#1e293b';
+            document.getElementById('bgColorValue').textContent = '#1e293b';
+            document.getElementById('waterColor').value = '#1e3a5f';
+            document.getElementById('waterColorValue').textContent = '#1e3a5f';
+            document.getElementById('landColor').value = '#475569';
+            document.getElementById('landColorValue').textContent = '#475569';
+            document.getElementById('borderColor').value = '#60a5fa';
+            document.getElementById('borderColorValue').textContent = '#60a5fa';
+            document.getElementById('graticuleColor').value = '#334155';
+            document.getElementById('graticuleColorValue').textContent = '#334155';
+        } else if (theme === 'light') {
+            document.getElementById('bgColor').value = '#ffffff';
+            document.getElementById('bgColorValue').textContent = '#ffffff';
+            document.getElementById('waterColor').value = '#e0f2fe';
+            document.getElementById('waterColorValue').textContent = '#e0f2fe';
+            document.getElementById('landColor').value = '#f1f5f9';
+            document.getElementById('landColorValue').textContent = '#f1f5f9';
+            document.getElementById('borderColor').value = '#3b82f6';
+            document.getElementById('borderColorValue').textContent = '#3b82f6';
+            document.getElementById('graticuleColor').value = '#cbd5e1';
+            document.getElementById('graticuleColorValue').textContent = '#cbd5e1';
+        }
+        // For 'custom', don't change anything - let user manually adjust
+        
+        updateMapColors();
+    }
 
     function loadAirportDatabase() {
         if (window.loadedAirportData) {
@@ -523,18 +564,23 @@
 
     document.getElementById('bgColor').addEventListener('input', (e) => {
         document.getElementById('bgColorValue').textContent = e.target.value;
+        document.getElementById('theme').value = 'custom';
     });
     document.getElementById('waterColor').addEventListener('input', (e) => {
         document.getElementById('waterColorValue').textContent = e.target.value;
+        document.getElementById('theme').value = 'custom';
     });
     document.getElementById('landColor').addEventListener('input', (e) => {
         document.getElementById('landColorValue').textContent = e.target.value;
+        document.getElementById('theme').value = 'custom';
     });
     document.getElementById('borderColor').addEventListener('input', (e) => {
         document.getElementById('borderColorValue').textContent = e.target.value;
+        document.getElementById('theme').value = 'custom';
     });
     document.getElementById('graticuleColor').addEventListener('input', (e) => {
         document.getElementById('graticuleColorValue').textContent = e.target.value;
+        document.getElementById('theme').value = 'custom';
     });
     document.getElementById('labelSize').addEventListener('input', (e) => {
         document.getElementById('labelSizeValue').textContent = e.target.value + 'px';
@@ -562,9 +608,9 @@
                 <button class="remove-route" onclick="removeRouteEntry(${id})">Remove</button>
             </div>
             <div class="input-wrapper">
-                <label>Route or Points</label>
-                <input type="text" id="route-input-${id}" placeholder="e.g., JFK-LHR or LAX, JFK, ATL">
-                <div class="helper-text">Connected: LAX-ATL-ORD • Points: LAX, JFK • Mixed: LAX-ATL, JFK</div>
+                <label>Route, Points, or Rings</label>
+                <input type="text" id="route-input-${id}" placeholder="e.g., JFK-LHR or LAX, JFK or 1000nm@ATL">
+                <div class="helper-text">Routes: LAX-ATL-ORD • Points: LAX, JFK • Rings: 1000nm@ATL, 500mi@JFK • Mixed: LAX-ATL, 1000nm@ORD</div>
             </div>
             <div class="style-grid">
                 <div class="style-item">
@@ -590,12 +636,6 @@
                     </select>
                 </div>
                 <div class="style-item">
-                    <label>
-                        <input type="checkbox" id="show-markers-${id}" checked style="width: auto; margin-right: 8px;">
-                        Show Markers
-                    </label>
-                </div>
-                <div class="style-item">
                     <label>Marker Color</label>
                     <div class="color-input-wrapper">
                         <input type="color" id="marker-color-${id}" value="${colors[colorIndex]}" onchange="updateEntryColor(${id})">
@@ -618,12 +658,17 @@
                         <option value="triangle">Triangle</option>
                     </select>
                 </div>
+                <div class="style-item">
+                    <label>
+                        <input type="checkbox" id="show-markers-${id}" checked style="width: auto; margin-right: 8px;">
+                        Show Markers
+                    </label>
+                </div>
             </div>
         `;
         
         container.appendChild(entry);
         
-        // Add drag and drop event listeners to the header only
         const header = entry.querySelector('.route-header');
         header.addEventListener('dragstart', handleDragStart);
         header.addEventListener('dragend', handleDragEnd);
@@ -632,7 +677,6 @@
         entry.addEventListener('dragenter', handleDragEnter);
         entry.addEventListener('dragleave', handleDragLeave);
         
-        // Add change listeners for dynamic updates
         document.getElementById(`line-color-${id}`).addEventListener('input', (e) => {
             document.getElementById(`line-color-value-${id}`).textContent = e.target.value;
             if (drawnRoutes.length > 0) drawAllRoutes();
@@ -648,14 +692,14 @@
         document.getElementById(`line-style-${id}`).addEventListener('change', () => {
             if (drawnRoutes.length > 0) drawAllRoutes();
         });
-        document.getElementById(`show-markers-${id}`).addEventListener('change', () => {
-            if (drawnRoutes.length > 0) drawAllRoutes();
-        });
         document.getElementById(`marker-size-${id}`).addEventListener('input', (e) => {
             document.getElementById(`marker-size-value-${id}`).textContent = e.target.value;
             if (drawnRoutes.length > 0) drawAllRoutes();
         });
         document.getElementById(`marker-shape-${id}`).addEventListener('change', () => {
+            if (drawnRoutes.length > 0) drawAllRoutes();
+        });
+        document.getElementById(`show-markers-${id}`).addEventListener('change', () => {
             if (drawnRoutes.length > 0) drawAllRoutes();
         });
     }
@@ -665,7 +709,6 @@
     let isDragging = false;
 
     function handleDragStart(e) {
-        // Find the parent route-entry element
         draggedElement = this.closest('.route-entry');
         dragStartY = e.clientY;
         isDragging = false;
@@ -718,7 +761,6 @@
                 container.insertBefore(draggedElement, this);
             }
             
-            // Redraw routes if any are currently drawn
             if (drawnRoutes.length > 0) {
                 drawAllRoutes();
             }
@@ -739,7 +781,6 @@
         const entry = document.getElementById(`route-entry-${id}`);
         if (entry) {
             entry.remove();
-            // Redraw routes if any are currently drawn
             if (drawnRoutes.length > 0) {
                 drawAllRoutes();
             }
@@ -778,35 +819,27 @@
         const previousProjType = projection ? 
             (projection.parallels ? 'conic' : (isPlanarProjection(projType) ? 'planar' : 'azimuthal')) : null;
         
-        // Save current view state before changing projection
         if (projection) {
             savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
             savedViewState.translate = projection.translate ? projection.translate() : [width / 2, height / 2];
             savedViewState.zoom = currentZoom;
         }
         
-        // Determine projection types
         const isConic = projType === 'lambertConformal' || projType === 'albers';
         const isAzimuthal = !isPlanarProjection(projType) && !isConic;
         const wasPlanarProjection = previousProjType === 'planar';
         const wasConicProjection = previousProjType === 'conic';
         
-        // Determine the correct translate value
         let centerTranslate = savedViewState.translate || [width / 2, height / 2];
         
-        // Reset translate to center when:
-        // 1. Switching from conic to planar/azimuthal
-        // 2. Switching from planar to azimuthal (planar uses translate for vertical pan, azimuthal should always be centered)
         if ((wasConicProjection && !isConic) || (wasPlanarProjection && isAzimuthal)) {
             centerTranslate = [width / 2, height / 2];
         }
         
-        // Reset zoom when switching from planar to azimuthal to avoid off-screen issues
         if (wasPlanarProjection && isAzimuthal) {
             currentZoom = 1;
         }
         
-        // Don't reset zoom and drag state
         if (svg) {
             svg.on('.zoom', null);
             svg.on('wheel', null);
@@ -940,7 +973,6 @@
 
                 const showBorder = document.getElementById('showBorder').checked;
                 
-                // Draw sphere fill first (as background water/ocean)
                 if (showBorder) {
                     g.append("path")
                         .datum({type: "Sphere"})
@@ -965,7 +997,6 @@
                     .attr("d", path)
                     .style("fill", document.getElementById('landColor').value);
 
-                // Draw sphere border on top of everything
                 if (showBorder) {
                     g.append("path")
                         .datum({type: "Sphere"})
@@ -1004,7 +1035,6 @@
                             
                             const newTranslateY = currentTranslate[1] + event.dy;
                             
-                            // Scale the pan limit based on zoom level - allow more panning when zoomed in
                             const maxPanY = height * 0.7 * Math.max(1, currentZoom);
                             const minY = height / 2 - maxPanY;
                             const maxY = height / 2 + maxPanY;
@@ -1057,14 +1087,73 @@
         g.selectAll('.path').remove();
         g.selectAll('.airport').remove();
         g.selectAll('.airport-label').remove();
+        g.selectAll('.ring').remove();
         
         drawnRoutes.forEach(routeData => {
-            drawRouteData(routeData);
+            drawRouteLines(routeData);
+            drawRings(routeData);
+            drawMarkers(routeData);
+        });
+        
+        drawnRoutes.forEach(routeData => {
+            drawLabels(routeData);
         });
     }
 
-    function drawRouteData(routeData) {
-        const { routes, points, style } = routeData;
+    function drawRings(routeData) {
+        const { rings, style } = routeData;
+        
+        if (!rings || rings.length === 0) return;
+        
+        rings.forEach(ring => {
+            const center = [ring.airport.lon, ring.airport.lat];
+            
+            // Calculate the radius in degrees (approximate)
+            const radiusInDegrees = (ring.distanceMeters / 1000) / 111.32; // rough conversion
+            
+            // Create circle points
+            const numPoints = 360;
+            const circlePoints = [];
+            
+            for (let i = 0; i <= numPoints; i++) {
+                const angle = (i * 360 / numPoints) * Math.PI / 180;
+                
+                // Calculate destination point using great circle formula
+                const lat1 = ring.airport.lat * Math.PI / 180;
+                const lon1 = ring.airport.lon * Math.PI / 180;
+                const angularDistance = ring.distanceMeters / 6371000; // Earth radius in meters
+                
+                const lat2 = Math.asin(
+                    Math.sin(lat1) * Math.cos(angularDistance) +
+                    Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(angle)
+                );
+                
+                const lon2 = lon1 + Math.atan2(
+                    Math.sin(angle) * Math.sin(angularDistance) * Math.cos(lat1),
+                    Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
+                );
+                
+                circlePoints.push([
+                    lon2 * 180 / Math.PI,
+                    lat2 * 180 / Math.PI
+                ]);
+            }
+            
+            g.append("path")
+                .datum({type: "LineString", coordinates: circlePoints})
+                .attr("class", "ring")
+                .attr("d", path)
+                .style("stroke", style.lineColor)
+                .style("stroke-width", style.lineWidth)
+                .style("fill", "none")
+                .style("stroke-dasharray", 
+                    style.lineStyle === 'dashed' ? `${style.lineWidth * 4},${style.lineWidth * 2}` : 
+                    style.lineStyle === 'dotted' ? `${style.lineWidth * 0.5},${style.lineWidth * 1.5}` : 'none');
+        });
+    }
+
+    function drawRouteLines(routeData) {
+        const { routes, style } = routeData;
         
         routes.forEach(airportList => {
             for (let i = 0; i < airportList.length - 1; i++) {
@@ -1088,19 +1177,22 @@
                         style.lineStyle === 'dotted' ? `${style.lineWidth * 0.5},${style.lineWidth * 1.5}` : 'none');
             }
         });
+    }
+
+    function drawMarkers(routeData) {
+        const { routes, points, rings, style } = routeData;
         
         const allAirports = new Set();
         routes.forEach(route => route.forEach(apt => allAirports.add(apt)));
         points.forEach(apt => allAirports.add(apt));
+        rings.forEach(ring => allAirports.add(ring.airport));
         
-        const showLabels = document.getElementById('showLabels').checked;
         const projType = document.getElementById('projection').value;
         
         allAirports.forEach(airport => {
             const coords = projection([airport.lon, airport.lat]);
             if (!coords || isNaN(coords[0]) || isNaN(coords[1])) return;
             
-            // Check if point is visible for projections with clipping
             if (projType === 'orthographic' || projType === 'stereographic' || projType === 'gnomonic') {
                 const distance = d3.geoDistance([airport.lon, airport.lat], projection.invert(projection.translate()));
                 const clipAngle = projection.clipAngle ? projection.clipAngle() * Math.PI / 180 : Math.PI / 2;
@@ -1109,7 +1201,6 @@
             
             const size = style.markerSize;
             
-            // Only draw marker if showMarkers is true
             if (style.showMarkers) {
                 if (style.markerShape === 'circle') {
                     g.append('circle')
@@ -1145,6 +1236,31 @@
                         .style('fill', style.markerColor);
                 }
             }
+        });
+    }
+
+    function drawLabels(routeData) {
+        const { routes, points, rings, style } = routeData;
+        
+        const allAirports = new Set();
+        routes.forEach(route => route.forEach(apt => allAirports.add(apt)));
+        points.forEach(apt => allAirports.add(apt));
+        rings.forEach(ring => allAirports.add(ring.airport));
+        
+        const showLabels = document.getElementById('showLabels').checked;
+        const projType = document.getElementById('projection').value;
+        
+        allAirports.forEach(airport => {
+            const coords = projection([airport.lon, airport.lat]);
+            if (!coords || isNaN(coords[0]) || isNaN(coords[1])) return;
+            
+            if (projType === 'orthographic' || projType === 'stereographic' || projType === 'gnomonic') {
+                const distance = d3.geoDistance([airport.lon, airport.lat], projection.invert(projection.translate()));
+                const clipAngle = projection.clipAngle ? projection.clipAngle() * Math.PI / 180 : Math.PI / 2;
+                if (distance > clipAngle) return;
+            }
+            
+            const size = style.markerSize;
             
             if (showLabels) {
                 const labelSize = document.getElementById('labelSize').value;
@@ -1155,7 +1271,6 @@
                 let yPos = coords[1] + offset.y;
                 let anchor = "middle";
                 
-                // Apply position preset (only if no custom offset has been applied)
                 if (!labelOffsets[airport.code]) {
                     switch(labelPosition) {
                         case 'top':
@@ -1182,7 +1297,6 @@
                             break;
                     }
                 } else {
-                    // If custom offset exists, use the original top positioning as base
                     yPos = coords[1] - 12 - size + offset.y;
                 }
                 
@@ -1274,8 +1388,41 @@
         const items = input.split(',').map(r => r.trim()).filter(r => r.length > 0);
         const routes = [];
         const singlePoints = [];
+        const rings = [];
         
         for (let item of items) {
+            // Check if it's a ring (format: distance@airport)
+            const ringMatch = item.match(/^(\d+(?:\.\d+)?)(nm|mi|km)\s*@\s*([A-Z]{3})$/i);
+            if (ringMatch) {
+                const distance = parseFloat(ringMatch[1]);
+                const unit = ringMatch[2].toLowerCase();
+                const airportCode = ringMatch[3].toUpperCase();
+                
+                const airport = airports.find(a => a.code === airportCode);
+                if (!airport) {
+                    alert(`Airport code "${airportCode}" not found.`);
+                    return null;
+                }
+                
+                // Convert distance to meters for internal use
+                let distanceMeters;
+                if (unit === 'nm') {
+                    distanceMeters = distance * 1852; // nautical miles to meters
+                } else if (unit === 'mi') {
+                    distanceMeters = distance * 1609.34; // miles to meters
+                } else { // km
+                    distanceMeters = distance * 1000; // kilometers to meters
+                }
+                
+                rings.push({
+                    airport: airport,
+                    distanceMeters: distanceMeters,
+                    distanceDisplay: distance,
+                    unit: unit
+                });
+                continue;
+            }
+            
             const codes = item.toUpperCase().split('-').map(c => c.trim()).filter(c => c.length > 0);
             
             if (codes.length === 1) {
@@ -1299,11 +1446,11 @@
             }
         }
         
-        if (routes.length === 0 && singlePoints.length === 0) {
+        if (routes.length === 0 && singlePoints.length === 0 && rings.length === 0) {
             return null;
         }
         
-        return { routes: routes, points: singlePoints };
+        return { routes: routes, points: singlePoints, rings: rings };
     }
 
     function getLabelText(airport) {
@@ -1326,13 +1473,11 @@
         const sphereBorder = g.select('.sphere-border');
         
         if (sphereFill.empty() || sphereBorder.empty()) {
-            // Elements don't exist, need to redraw map to add them
             if (showBorder) {
                 updateProjection();
                 loadWorldMap();
             }
         } else {
-            // Elements exist, just toggle visibility
             sphereFill.style('display', showBorder ? 'block' : 'none');
             sphereBorder.style('display', showBorder ? 'block' : 'none');
         }
@@ -1343,13 +1488,11 @@
         const graticule = g.select('.graticule');
         
         if (graticule.empty()) {
-            // Graticule doesn't exist, need to redraw map to add it
             if (showGraticule) {
                 updateProjection();
                 loadWorldMap();
             }
         } else {
-            // Graticule exists, just toggle visibility
             graticule.style('display', showGraticule ? 'block' : 'none');
         }
     }
@@ -1398,6 +1541,7 @@
             drawnRoutes.push({
                 routes: parsedData.routes,
                 points: parsedData.points,
+                rings: parsedData.rings,
                 style: style,
                 id: id
             });
@@ -1408,7 +1552,6 @@
             return;
         }
         
-        // Save current view before redrawing
         if (projection) {
             savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
             savedViewState.translate = projection.translate ? projection.translate() : null;
@@ -1472,6 +1615,11 @@
                 routeData.points.forEach(apt => {
                     uniqueAirports.add(apt.code);
                     routeAirportSet.add(apt.code);
+                });
+                
+                routeData.rings.forEach(ring => {
+                    uniqueAirports.add(ring.airport.code);
+                    routeAirportSet.add(ring.airport.code);
                 });
                 
                 routeDistances[routeData.id] = {
@@ -1552,6 +1700,15 @@
                         </div>
                     `;
                 });
+                
+                routeData.rings.forEach(ring => {
+                    segmentsHTML += `
+                        <div class="route-item" style="border-left-color: ${routeData.style.lineColor}">
+                            <div class="route-item-header" style="color: ${routeData.style.lineColor}">Group ${routeData.id}: ${ring.distanceDisplay}${ring.unit} ring @ ${ring.airport.code}</div>
+                            <div>${ring.airport.name}, ${ring.airport.city}</div>
+                        </div>
+                    `;
+                });
             });
             
             document.getElementById('route-list').innerHTML = segmentsHTML;
@@ -1565,7 +1722,6 @@
         document.getElementById('route-info').innerHTML = 'Add routes to view information';
         document.getElementById('route-list').innerHTML = '';
         
-        // Save current view before clearing
         if (projection) {
             savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
             savedViewState.translate = projection.translate ? projection.translate() : null;
