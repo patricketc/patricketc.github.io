@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -44,13 +43,15 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         .route-entry {
-            background: #0f172a;
+            background: #1e293b;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 15px;
             border-left: 4px solid #60a5fa;
             transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
             position: relative;
+            border: 1px solid #334155;
+            border-left: 4px solid #60a5fa;
         }
         .route-entry:hover {
             box-shadow: 0 2px 8px rgba(96, 165, 250, 0.3);
@@ -296,102 +297,209 @@
         }
         .settings-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
+        }
+        /* Quick Controls Bar */
+        .quick-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: #1e293b;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .quick-control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .quick-control-item label {
+            font-size: 0.75em;
+            color: #94a3b8;
+            margin-bottom: 0;
+        }
+        .quick-control-item select {
+            padding: 8px 12px;
+            font-size: 0.9em;
+            min-width: 160px;
+        }
+        .quick-control-item.checkbox-item {
+            flex-direction: row;
+            align-items: center;
+            padding: 8px 12px;
+            background: #0f172a;
+            border-radius: 6px;
+        }
+        .quick-control-item.checkbox-item label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+            color: #e2e8f0;
+            cursor: pointer;
+        }
+        .quick-control-item.checkbox-item input[type="checkbox"] {
+            width: auto;
+        }
+        /* Accordion Styles */
+        .accordion-section {
+            background: #0f172a;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .accordion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .accordion-header:hover {
+            background: rgba(96, 165, 250, 0.1);
+        }
+        .accordion-header h3 {
+            color: #60a5fa;
+            margin: 0;
+            font-size: 1em;
+        }
+        .accordion-icon {
+            color: #60a5fa;
+            font-size: 0.8em;
+            transition: transform 0.3s;
+        }
+        .accordion-section:not(.open) .accordion-icon {
+            transform: rotate(-90deg);
+        }
+        .accordion-content {
+            padding: 0 20px 20px 20px;
+            display: none;
+        }
+        .accordion-section.open .accordion-content {
+            display: block;
+        }
+        .info-panel .accordion-section {
+            background: transparent;
+        }
+        .info-panel .accordion-header {
+            padding: 0 0 15px 0;
+        }
+        .info-panel .accordion-content {
+            padding: 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>✈️ Great Circle Airline Route Mapper</h1>
+        
+        <!-- Quick Controls Bar -->
+        <div class="quick-controls">
+            <div class="quick-control-item">
+                <label for="projection">Projection</label>
+                <select id="projection">
+                    <optgroup label="Azimuthal">
+                        <option value="orthographic">Orthographic</option>
+                        <option value="stereographic">Stereographic</option>
+                        <option value="azimuthalEquidistant">Azimuthal Equidistant</option>
+                        <option value="azimuthalEqualArea">Azimuthal Equal Area</option>
+                        <option value="gnomonic">Gnomonic</option>
+                    </optgroup>
+                    <optgroup label="Cylindrical/Pseudo-cylindrical">
+                        <option value="equirectangular">Equirectangular</option>
+                        <option value="mercator">Mercator</option>
+                        <option value="naturalEarth">Natural Earth</option>
+                        <option value="winkelTripel">Winkel Tripel</option>
+                        <option value="robinson">Robinson</option>
+                    </optgroup>
+                    <optgroup label="Conic">
+                        <option value="lambertConformal">Lambert Conformal Conic</option>
+                        <option value="albers">Albers Equal Area Conic</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="quick-control-item">
+                <label for="theme">Theme</label>
+                <select id="theme" onchange="applyTheme()">
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+            <div class="quick-control-item checkbox-item">
+                <label>
+                    <input type="checkbox" id="showLabels" checked onchange="redrawAll()">
+                    Labels
+                </label>
+            </div>
+            <div class="quick-control-item checkbox-item">
+                <label>
+                    <input type="checkbox" id="showGraticule" checked onchange="toggleGraticule()">
+                    Graticule
+                </label>
+            </div>
+            <div class="quick-control-item" style="margin-left: auto;">
+                <button onclick="exportMap()" style="padding: 8px 16px; font-size: 0.9em;">
+                    📷 Export PNG
+                </button>
+            </div>
+        </div>
 
-```
-    <div class="controls">
-        <div class="global-settings">
-            <h3 style="margin-bottom: 15px; color: #60a5fa;">Global Settings</h3>
-            
-            <div style="margin-bottom: 25px;">
-                <h4 style="color: #94a3b8; font-size: 0.95em; margin-bottom: 12px; font-weight: 600;">Map Settings</h4>
-                <div class="settings-grid">
-                    <div>
-                        <label for="theme">Color Theme</label>
-                        <select id="theme" onchange="applyTheme()">
-                            <option value="dark">Dark</option>
-                            <option value="light">Light</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="projection">Map Projection</label>
-                        <select id="projection">
-                            <optgroup label="Azimuthal">
-                                <option value="orthographic">Orthographic</option>
-                                <option value="stereographic">Stereographic</option>
-                                <option value="azimuthalEquidistant">Azimuthal Equidistant</option>
-                                <option value="azimuthalEqualArea">Azimuthal Equal Area</option>
-                                <option value="gnomonic">Gnomonic</option>
-                            </optgroup>
-                            <optgroup label="Cylindrical/Pseudo-cylindrical">
-                                <option value="equirectangular">Equirectangular</option>
-                                <option value="mercator">Mercator</option>
-                                <option value="naturalEarth">Natural Earth</option>
-                                <option value="winkelTripel">Winkel Tripel</option>
-                                <option value="robinson">Robinson</option>
-                            </optgroup>
-                            <optgroup label="Conic">
-                                <option value="lambertConformal">Lambert Conformal Conic</option>
-                                <option value="albers">Albers Equal Area Conic</option>
-                            </optgroup>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="bgColor">Window Background</label>
-                        <div class="color-input-wrapper">
-                            <input type="color" id="bgColor" value="#1e293b" onchange="updateMapColors()">
-                            <span class="color-value" id="bgColorValue">#1e293b</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="waterColor">Ocean/Water Color</label>
-                        <div class="color-input-wrapper">
-                            <input type="color" id="waterColor" value="#1e3a5f" onchange="updateMapColors()">
-                            <span class="color-value" id="waterColorValue">#1e3a5f</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label for="landColor">Land Color</label>
-                        <div class="color-input-wrapper">
-                            <input type="color" id="landColor" value="#475569" onchange="updateMapColors()">
-                            <span class="color-value" id="landColorValue">#475569</span>
-                        </div>
+        <!-- Map First -->
+        <div class="map-container">
+            <svg id="map"></svg>
+        </div>
+
+        <!-- Routes Panel - Always Visible -->
+        <div class="controls">
+            <div class="accordion-section open">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <h3>Routes & Points</h3>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div id="routeEntries"></div>
+                    
+                    <div class="button-group">
+                        <button class="add-route-btn" onclick="addRouteEntry()">+ Add Route/Point</button>
+                        <button onclick="drawAllRoutes()">Draw All Routes</button>
+                        <button class="clear-btn" onclick="clearAllRoutes()">Clear All</button>
                     </div>
                 </div>
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #334155;">
-                    <h5 style="color: #94a3b8; font-size: 0.85em; margin-bottom: 10px; font-weight: 600;">Projection Border</h5>
-                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; align-items: start;">
+            </div>
+
+            <div class="accordion-section">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <h3>Map Settings</h3>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="settings-grid">
                         <div>
-                            <label>
-                                <input type="checkbox" id="showBorder" checked onchange="toggleBorder()" style="width: auto; margin-right: 8px;">
-                                Show Border
-                            </label>
-                        </div>
-                        <div>
-                            <label for="borderColor">Border Color</label>
+                            <label for="bgColor">Window Background</label>
                             <div class="color-input-wrapper">
-                                <input type="color" id="borderColor" value="#60a5fa" onchange="updateMapColors()">
-                                <span class="color-value" id="borderColorValue">#60a5fa</span>
+                                <input type="color" id="bgColor" value="#1e293b" onchange="updateMapColors()">
+                                <span class="color-value" id="bgColorValue">#1e293b</span>
                             </div>
                         </div>
-                    </div>
-                </div>
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #334155;">
-                    <h5 style="color: #94a3b8; font-size: 0.85em; margin-bottom: 10px; font-weight: 600;">Graticule</h5>
-                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; align-items: start;">
                         <div>
-                            <label>
-                                <input type="checkbox" id="showGraticule" checked onchange="toggleGraticule()" style="width: auto; margin-right: 8px;">
-                                Show Graticule
-                            </label>
+                            <label for="waterColor">Ocean/Water Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="waterColor" value="#1e3a5f" onchange="updateMapColors()">
+                                <span class="color-value" id="waterColorValue">#1e3a5f</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="landColor">Land Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="landColor" value="#475569" onchange="updateMapColors()">
+                                <span class="color-value" id="landColorValue">#475569</span>
+                            </div>
                         </div>
                         <div>
                             <label for="graticuleColor">Graticule Color</label>
@@ -401,1355 +509,1410 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <div>
-                <h4 style="color: #94a3b8; font-size: 0.95em; margin-bottom: 12px; font-weight: 600;">Label Settings</h4>
-                <div class="settings-grid">
-                    <div>
-                        <label>
-                            <input type="checkbox" id="showLabels" checked onchange="redrawAll()" style="width: auto; margin-right: 8px;">
-                            Show Airport Labels
-                        </label>
-                        <select id="labelType" onchange="redrawAll()" style="margin-top: 8px;">
-                            <option value="code">Code</option>
-                            <option value="city">City</option>
-                            <option value="both">Both</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="labelPosition">Label Position</label>
-                        <select id="labelPosition" onchange="redrawAll()">
-                            <option value="top">Top</option>
-                            <option value="bottom">Bottom</option>
-                            <option value="left">Left</option>
-                            <option value="right">Right</option>
-                            <option value="center">Center</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="labelSize">Label Size</label>
-                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                            <input type="range" id="labelSize" min="8" max="24" value="12" step="1" onchange="redrawAll()" style="flex: 1; cursor: pointer;">
-                            <span id="labelSizeValue" style="font-size: 0.9em; min-width: 35px;">12px</span>
+                    <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #334155;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div>
+                                <label>
+                                    <input type="checkbox" id="showBorder" checked onchange="toggleBorder()" style="width: auto; margin-right: 8px;">
+                                    Show Projection Border
+                                </label>
+                                <div class="color-input-wrapper" style="margin-top: 8px;">
+                                    <input type="color" id="borderColor" value="#60a5fa" onchange="updateMapColors()">
+                                    <span class="color-value" id="borderColorValue">#60a5fa</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <label>Label Positioning</label>
-                        <button onclick="resetLabelPositions()" style="width: 100%; padding: 8px; font-size: 0.9em; margin-top: 5px;">Reset Label Positions</button>
-                        <div class="helper-text" style="margin-top: 8px;">Hold Shift + drag to reposition labels</div>
+                </div>
+            </div>
+
+            <div class="accordion-section">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <h3>Label Settings</h3>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div class="settings-grid">
+                        <div>
+                            <label for="labelType">Label Content</label>
+                            <select id="labelType" onchange="redrawAll()">
+                                <option value="code">Code</option>
+                                <option value="city">City</option>
+                                <option value="both">Both</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="labelPosition">Label Position</label>
+                            <select id="labelPosition" onchange="redrawAll()">
+                                <option value="top">Top</option>
+                                <option value="bottom">Bottom</option>
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                                <option value="center">Center</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="labelSize">Label Size</label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                                <input type="range" id="labelSize" min="8" max="24" value="12" step="1" onchange="redrawAll()" style="flex: 1; cursor: pointer;">
+                                <span id="labelSizeValue" style="font-size: 0.9em; min-width: 35px;">12px</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label>Label Positioning</label>
+                            <button onclick="resetLabelPositions()" style="width: 100%; padding: 8px; font-size: 0.9em; margin-top: 5px;">Reset Positions</button>
+                            <div class="helper-text" style="margin-top: 8px;">Shift + drag to reposition</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="color: #60a5fa;">Routes & Points</h3>
+        <div class="info-panel">
+            <div class="accordion-section open">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <h3>Route Information</h3>
+                    <span class="accordion-icon">▼</span>
+                </div>
+                <div class="accordion-content">
+                    <div id="route-info">Loading airport database...</div>
+                    <div class="route-list" id="route-list"></div>
+                </div>
+            </div>
         </div>
-        
-        <div id="routeEntries"></div>
-        
-        <div class="button-group">
-            <button class="add-route-btn" onclick="addRouteEntry()">+ Add Route/Point</button>
-            <button onclick="drawAllRoutes()">Draw All Routes</button>
-            <button class="clear-btn" onclick="clearAllRoutes()">Clear All</button>
-        </div>
     </div>
 
-    <div class="map-container">
-        <svg id="map"></svg>
-    </div>
+    <script>
+        let airports = [];
+        let svg, projection, path, g, width, height;
+        let currentZoom = 1;
+        let routeEntryCount = 0;
+        let drawnRoutes = [];
+        let lastDragPos = null;
+        let labelOffsets = {};
+        let savedViewState = {
+            rotation: [0, 0, 0],
+            translate: null,
+            zoom: 1
+        };
+        let currentTheme = 'dark';
 
-    <div class="info-panel">
-        <h2 style="margin-bottom: 15px;">Route Information</h2>
-        <div id="route-info">Loading airport database...</div>
-        <div class="route-list" id="route-list"></div>
-    </div>
-</div>
-
-<script>
-    let airports = [];
-    let svg, projection, path, g, width, height;
-    let currentZoom = 1;
-    let routeEntryCount = 0;
-    let drawnRoutes = [];
-    let lastDragPos = null;
-    let labelOffsets = {};
-    let savedViewState = {
-        rotation: [0, 0, 0],
-        translate: null,
-        zoom: 1
-    };
-    let currentTheme = 'dark';
-
-    function applyTheme() {
-        const theme = document.getElementById('theme').value;
-        currentTheme = theme;
-        
-        if (theme === 'dark') {
-            document.getElementById('bgColor').value = '#1e293b';
-            document.getElementById('bgColorValue').textContent = '#1e293b';
-            document.getElementById('waterColor').value = '#1e3a5f';
-            document.getElementById('waterColorValue').textContent = '#1e3a5f';
-            document.getElementById('landColor').value = '#475569';
-            document.getElementById('landColorValue').textContent = '#475569';
-            document.getElementById('borderColor').value = '#60a5fa';
-            document.getElementById('borderColorValue').textContent = '#60a5fa';
-            document.getElementById('graticuleColor').value = '#334155';
-            document.getElementById('graticuleColorValue').textContent = '#334155';
-        } else if (theme === 'light') {
-            document.getElementById('bgColor').value = '#ffffff';
-            document.getElementById('bgColorValue').textContent = '#ffffff';
-            document.getElementById('waterColor').value = '#e0f2fe';
-            document.getElementById('waterColorValue').textContent = '#e0f2fe';
-            document.getElementById('landColor').value = '#f1f5f9';
-            document.getElementById('landColorValue').textContent = '#f1f5f9';
-            document.getElementById('borderColor').value = '#3b82f6';
-            document.getElementById('borderColorValue').textContent = '#3b82f6';
-            document.getElementById('graticuleColor').value = '#cbd5e1';
-            document.getElementById('graticuleColorValue').textContent = '#cbd5e1';
+        function toggleAccordion(header) {
+            const section = header.closest('.accordion-section');
+            section.classList.toggle('open');
         }
-        // For 'custom', don't change anything - let user manually adjust
-        
-        updateMapColors();
-    }
 
-    function loadAirportDatabase() {
-        if (window.loadedAirportData) {
-            const rawData = window.loadedAirportData;
+        function exportMap() {
+            const svgElement = document.getElementById('map');
+            const svgData = new XMLSerializer().serializeToString(svgElement);
             
-            if (Array.isArray(rawData)) {
-                airports = rawData
-                    .filter(airport => airport.iata && airport.latitude && airport.longitude)
-                    .map(airport => ({
-                        code: airport.iata,
-                        name: airport.name || airport.iata,
-                        city: airport.city || '',
-                        country: airport.country || '',
-                        lat: parseFloat(airport.latitude),
-                        lon: parseFloat(airport.longitude)
-                    }))
-                    .filter(a => a.code && !isNaN(a.lat) && !isNaN(a.lon));
-            } else if (typeof rawData === 'object') {
-                airports = Object.entries(rawData)
-                    .filter(([code, airport]) => code && airport.latitude && airport.longitude)
-                    .map(([code, airport]) => ({
-                        code: code,
-                        name: airport.name || code,
-                        city: airport.city || '',
-                        country: airport.country || '',
-                        lat: parseFloat(airport.latitude),
-                        lon: parseFloat(airport.longitude)
-                    }))
-                    .filter(a => a.code && !isNaN(a.lat) && !isNaN(a.lon));
-            }
+            // Get background color from map container
+            const bgColor = document.getElementById('bgColor').value;
             
-            console.log(`✈️ Successfully loaded ${airports.length} airports`);
-            document.getElementById('route-info').textContent = 'Add routes to view information';
-            initMap();
-            addRouteEntry();
-        }
-    }
-
-    window.addEventListener('airportDataLoaded', loadAirportDatabase);
-    
-    let loadAttempted = false;
-    setTimeout(() => {
-        if (window.airportDataReady && airports.length === 0 && !loadAttempted) {
-            loadAttempted = true;
-            loadAirportDatabase();
-        }
-    }, 1000);
-
-    document.getElementById('bgColor').addEventListener('input', (e) => {
-        document.getElementById('bgColorValue').textContent = e.target.value;
-        document.getElementById('theme').value = 'custom';
-    });
-    document.getElementById('waterColor').addEventListener('input', (e) => {
-        document.getElementById('waterColorValue').textContent = e.target.value;
-        document.getElementById('theme').value = 'custom';
-    });
-    document.getElementById('landColor').addEventListener('input', (e) => {
-        document.getElementById('landColorValue').textContent = e.target.value;
-        document.getElementById('theme').value = 'custom';
-    });
-    document.getElementById('borderColor').addEventListener('input', (e) => {
-        document.getElementById('borderColorValue').textContent = e.target.value;
-        document.getElementById('theme').value = 'custom';
-    });
-    document.getElementById('graticuleColor').addEventListener('input', (e) => {
-        document.getElementById('graticuleColorValue').textContent = e.target.value;
-        document.getElementById('theme').value = 'custom';
-    });
-    document.getElementById('labelSize').addEventListener('input', (e) => {
-        document.getElementById('labelSizeValue').textContent = e.target.value + 'px';
-    });
-
-    function resetLabelPositions() {
-        labelOffsets = {};
-        redrawAll();
-    }
-
-    function addRouteEntry() {
-        const id = ++routeEntryCount;
-        const container = document.getElementById('routeEntries');
-        
-        const colors = ['#f59e0b', '#ef4444', '#10b981', '#8b5cf6', '#ec4899', '#f97316'];
-        const colorIndex = (id - 1) % colors.length;
-        
-        const entry = document.createElement('div');
-        entry.className = 'route-entry';
-        entry.id = `route-entry-${id}`;
-        entry.style.borderLeftColor = colors[colorIndex];
-        entry.innerHTML = `
-            <div class="route-header" draggable="true">
-                <span class="route-number">Group ${id}</span>
-                <button class="remove-route" onclick="removeRouteEntry(${id})">Remove</button>
-            </div>
-            <div class="input-wrapper">
-                <label>Route, Points, or Rings</label>
-                <input type="text" id="route-input-${id}" placeholder="e.g., JFK-LHR or LAX, JFK or 1000nm@ATL">
-                <div class="helper-text">Routes: LAX-ATL-ORD • Points: LAX, JFK • Rings: 1000nm@ATL, 500mi@JFK • Mixed: LAX-ATL, 1000nm@ORD</div>
-            </div>
-            <div class="style-grid">
-                <div class="style-item">
-                    <label>Line Color</label>
-                    <div class="color-input-wrapper">
-                        <input type="color" id="line-color-${id}" value="${colors[colorIndex]}" onchange="updateEntryColor(${id})">
-                        <span class="color-value" id="line-color-value-${id}">${colors[colorIndex]}</span>
-                    </div>
-                </div>
-                <div class="style-item">
-                    <label>Line Width</label>
-                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                        <input type="range" id="line-width-${id}" min="1" max="8" value="2.5" step="0.5" style="flex: 1; cursor: pointer;">
-                        <span id="line-width-value-${id}" style="font-size: 0.9em; min-width: 35px;">2.5</span>
-                    </div>
-                </div>
-                <div class="style-item">
-                    <label>Line Style</label>
-                    <select id="line-style-${id}">
-                        <option value="solid">Solid</option>
-                        <option value="dashed">Dashed</option>
-                        <option value="dotted">Dotted</option>
-                    </select>
-                </div>
-                <div class="style-item">
-                    <label>Marker Color</label>
-                    <div class="color-input-wrapper">
-                        <input type="color" id="marker-color-${id}" value="${colors[colorIndex]}" onchange="updateEntryColor(${id})">
-                        <span class="color-value" id="marker-color-value-${id}">${colors[colorIndex]}</span>
-                    </div>
-                </div>
-                <div class="style-item">
-                    <label>Marker Size</label>
-                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                        <input type="range" id="marker-size-${id}" min="3" max="12" value="6" step="1" style="flex: 1; cursor: pointer;">
-                        <span id="marker-size-value-${id}" style="font-size: 0.9em; min-width: 35px;">6</span>
-                    </div>
-                </div>
-                <div class="style-item">
-                    <label>Marker Shape</label>
-                    <select id="marker-shape-${id}">
-                        <option value="circle">Circle</option>
-                        <option value="square">Square</option>
-                        <option value="diamond">Diamond</option>
-                        <option value="triangle">Triangle</option>
-                    </select>
-                </div>
-                <div class="style-item">
-                    <label>
-                        <input type="checkbox" id="show-markers-${id}" checked style="width: auto; margin-right: 8px;">
-                        Show Markers
-                    </label>
-                </div>
-            </div>
-        `;
-        
-        container.appendChild(entry);
-        
-        const header = entry.querySelector('.route-header');
-        header.addEventListener('dragstart', handleDragStart);
-        header.addEventListener('dragend', handleDragEnd);
-        entry.addEventListener('dragover', handleDragOver);
-        entry.addEventListener('drop', handleDrop);
-        entry.addEventListener('dragenter', handleDragEnter);
-        entry.addEventListener('dragleave', handleDragLeave);
-        
-        document.getElementById(`line-color-${id}`).addEventListener('input', (e) => {
-            document.getElementById(`line-color-value-${id}`).textContent = e.target.value;
-            if (drawnRoutes.length > 0) drawAllRoutes();
-        });
-        document.getElementById(`marker-color-${id}`).addEventListener('input', (e) => {
-            document.getElementById(`marker-color-value-${id}`).textContent = e.target.value;
-            if (drawnRoutes.length > 0) drawAllRoutes();
-        });
-        document.getElementById(`line-width-${id}`).addEventListener('input', (e) => {
-            document.getElementById(`line-width-value-${id}`).textContent = e.target.value;
-            if (drawnRoutes.length > 0) drawAllRoutes();
-        });
-        document.getElementById(`line-style-${id}`).addEventListener('change', () => {
-            if (drawnRoutes.length > 0) drawAllRoutes();
-        });
-        document.getElementById(`marker-size-${id}`).addEventListener('input', (e) => {
-            document.getElementById(`marker-size-value-${id}`).textContent = e.target.value;
-            if (drawnRoutes.length > 0) drawAllRoutes();
-        });
-        document.getElementById(`marker-shape-${id}`).addEventListener('change', () => {
-            if (drawnRoutes.length > 0) drawAllRoutes();
-        });
-        document.getElementById(`show-markers-${id}`).addEventListener('change', () => {
-            if (drawnRoutes.length > 0) drawAllRoutes();
-        });
-    }
-
-    let draggedElement = null;
-    let dragStartY = 0;
-    let isDragging = false;
-
-    function handleDragStart(e) {
-        draggedElement = this.closest('.route-entry');
-        dragStartY = e.clientY;
-        isDragging = false;
-        draggedElement.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', draggedElement.innerHTML);
-    }
-
-    function handleDragEnd(e) {
-        if (draggedElement) {
-            draggedElement.classList.remove('dragging');
-        }
-        document.querySelectorAll('.route-entry').forEach(entry => {
-            entry.classList.remove('drag-over');
-        });
-    }
-
-    function handleDragOver(e) {
-        if (e.preventDefault) {
-            e.preventDefault();
-        }
-        e.dataTransfer.dropEffect = 'move';
-        return false;
-    }
-
-    function handleDragEnter(e) {
-        if (this !== draggedElement) {
-            this.classList.add('drag-over');
-        }
-    }
-
-    function handleDragLeave(e) {
-        this.classList.remove('drag-over');
-    }
-
-    function handleDrop(e) {
-        if (e.stopPropagation) {
-            e.stopPropagation();
-        }
-
-        if (draggedElement !== this) {
-            const container = document.getElementById('routeEntries');
-            const allEntries = [...container.children];
-            const draggedIndex = allEntries.indexOf(draggedElement);
-            const targetIndex = allEntries.indexOf(this);
-
-            if (draggedIndex < targetIndex) {
-                container.insertBefore(draggedElement, this.nextSibling);
-            } else {
-                container.insertBefore(draggedElement, this);
-            }
+            // Create a canvas with the same dimensions
+            const canvas = document.createElement('canvas');
+            const scale = 2; // 2x resolution for crisp PowerPoint images
+            canvas.width = svgElement.clientWidth * scale;
+            canvas.height = svgElement.clientHeight * scale;
             
-            if (drawnRoutes.length > 0) {
-                drawAllRoutes();
-            }
-        }
-
-        return false;
-    }
-
-    function updateEntryColor(id) {
-        const entry = document.getElementById(`route-entry-${id}`);
-        const lineColor = document.getElementById(`line-color-${id}`).value;
-        if (entry) {
-            entry.style.borderLeftColor = lineColor;
-        }
-    }
-
-    function removeRouteEntry(id) {
-        const entry = document.getElementById(`route-entry-${id}`);
-        if (entry) {
-            entry.remove();
-            if (drawnRoutes.length > 0) {
-                drawAllRoutes();
-            }
-        }
-    }
-
-    function initMap() {
-        const container = document.getElementById('map');
-        width = container.clientWidth;
-        height = 788;
-
-        d3.select("#map").selectAll("*").remove();
-
-        svg = d3.select("#map")
-            .attr("width", width)
-            .attr("height", height);
-
-        g = svg.append("g");
-
-        updateProjection();
-        loadWorldMap();
-    }
-
-    function isPlanarProjection(projType) {
-        return projType === 'equirectangular' || 
-               projType === 'mercator' || 
-               projType === 'naturalEarth' ||
-               projType === 'lambertConformal' ||
-               projType === 'albers' ||
-               projType === 'winkelTripel' ||
-               projType === 'robinson';
-    }
-
-    function updateProjection() {
-        const projType = document.getElementById('projection').value;
-        const previousProjType = projection ? 
-            (projection.parallels ? 'conic' : (isPlanarProjection(projType) ? 'planar' : 'azimuthal')) : null;
-        
-        if (projection) {
-            savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
-            savedViewState.translate = projection.translate ? projection.translate() : [width / 2, height / 2];
-            savedViewState.zoom = currentZoom;
-        }
-        
-        const isConic = projType === 'lambertConformal' || projType === 'albers';
-        const isAzimuthal = !isPlanarProjection(projType) && !isConic;
-        const wasPlanarProjection = previousProjType === 'planar';
-        const wasConicProjection = previousProjType === 'conic';
-        
-        let centerTranslate = savedViewState.translate || [width / 2, height / 2];
-        
-        if ((wasConicProjection && !isConic) || (wasPlanarProjection && isAzimuthal)) {
-            centerTranslate = [width / 2, height / 2];
-        }
-        
-        if (wasPlanarProjection && isAzimuthal) {
-            currentZoom = 1;
-        }
-        
-        if (svg) {
-            svg.on('.zoom', null);
-            svg.on('wheel', null);
-            svg.on('.drag', null);
-        }
-        
-        if (g) {
-            g.attr('transform', null);
-        }
-        
-        switch(projType) {
-            case 'orthographic':
-                projection = d3.geoOrthographic()
-                    .scale(Math.min(width, height) / 2.2 * currentZoom)
-                    .translate([width / 2, height / 2])
-                    .rotate(savedViewState.rotation)
-                    .clipAngle(90);
-                break;
-            case 'equirectangular':
-                projection = d3.geoEquirectangular()
-                    .scale(width / (2 * Math.PI) * currentZoom)
-                    .translate(centerTranslate)
-                    .rotate([savedViewState.rotation[0], 0, 0]);
-                break;
-            case 'mercator':
-                projection = d3.geoMercator()
-                    .scale(width / (2 * Math.PI) * currentZoom)
-                    .translate(centerTranslate)
-                    .rotate([savedViewState.rotation[0], 0, 0]);
-                break;
-            case 'naturalEarth':
-                projection = d3.geoNaturalEarth1()
-                    .scale(width / 5.5 * currentZoom)
-                    .translate(centerTranslate)
-                    .rotate([savedViewState.rotation[0], 0, 0]);
-                break;
-            case 'azimuthalEquidistant':
-                projection = d3.geoAzimuthalEquidistant()
-                    .scale(width / 4 * currentZoom)
-                    .translate([width / 2, height / 2])
-                    .rotate(savedViewState.rotation)
-                    .clipAngle(180);
-                break;
-            case 'stereographic':
-                projection = d3.geoStereographic()
-                    .scale(width / 4 * currentZoom)
-                    .translate([width / 2, height / 2])
-                    .rotate(savedViewState.rotation)
-                    .clipAngle(120);
-                break;
-            case 'azimuthalEqualArea':
-                projection = d3.geoAzimuthalEqualArea()
-                    .scale(width / 4 * currentZoom)
-                    .translate([width / 2, height / 2])
-                    .rotate(savedViewState.rotation)
-                    .clipAngle(180);
-                break;
-            case 'lambertConformal':
-                projection = d3.geoConicConformal()
-                    .parallels([20, 60])
-                    .scale(width / 4 * currentZoom)
-                    .translate(centerTranslate)
-                    .rotate([savedViewState.rotation[0], 0, 0]);
-                break;
-            case 'albers':
-                projection = d3.geoAlbers()
-                    .scale(width / 5 * currentZoom)
-                    .translate(centerTranslate)
-                    .rotate([savedViewState.rotation[0], 0, 0]);
-                break;
-            case 'gnomonic':
-                projection = d3.geoGnomonic()
-                    .scale(width / 4 * currentZoom)
-                    .translate([width / 2, height / 2])
-                    .rotate(savedViewState.rotation)
-                    .clipAngle(60);
-                break;
-            case 'winkelTripel':
-                projection = d3.geoWinkel3()
-                    .scale(width / 5.5 * currentZoom)
-                    .translate(centerTranslate)
-                    .rotate([savedViewState.rotation[0], 0, 0]);
-                break;
-            case 'robinson':
-                projection = d3.geoRobinson()
-                    .scale(width / 5.5 * currentZoom)
-                    .translate(centerTranslate)
-                    .rotate([savedViewState.rotation[0], 0, 0]);
-                break;
-        }
-
-        path = d3.geoPath().projection(projection);
-    }
-
-    function getBaseScale() {
-        const projType = document.getElementById('projection').value;
-        switch(projType) {
-            case 'orthographic':
-                return Math.min(width, height) / 2.2;
-            case 'equirectangular':
-                return width / (2 * Math.PI);
-            case 'mercator':
-                return width / (2 * Math.PI);
-            case 'naturalEarth':
-                return width / 5.5;
-            case 'azimuthalEquidistant':
-                return width / 4;
-            case 'stereographic':
-                return width / 4;
-            case 'azimuthalEqualArea':
-                return width / 4;
-            case 'lambertConformal':
-                return width / 4;
-            case 'albers':
-                return width / 5;
-            case 'gnomonic':
-                return width / 4;
-            case 'winkelTripel':
-                return width / 5.5;
-            case 'robinson':
-                return width / 5.5;
-            default:
-                return width / 2.2;
-        }
-    }
-
-    function loadWorldMap() {
-        d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
-            .then(world => {
-                g.selectAll("*").remove();
-
-                const showBorder = document.getElementById('showBorder').checked;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(scale, scale);
+            
+            // Fill background
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Create image from SVG
+            const img = new Image();
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0);
+                URL.revokeObjectURL(url);
                 
-                if (showBorder) {
+                // Convert to PNG and download
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.download = 'route-map.png';
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    URL.revokeObjectURL(link.href);
+                }, 'image/png');
+            };
+            
+            img.src = url;
+        }
+
+        function applyTheme() {
+            const theme = document.getElementById('theme').value;
+            currentTheme = theme;
+            
+            if (theme === 'dark') {
+                document.getElementById('bgColor').value = '#1e293b';
+                document.getElementById('bgColorValue').textContent = '#1e293b';
+                document.getElementById('waterColor').value = '#1e3a5f';
+                document.getElementById('waterColorValue').textContent = '#1e3a5f';
+                document.getElementById('landColor').value = '#475569';
+                document.getElementById('landColorValue').textContent = '#475569';
+                document.getElementById('borderColor').value = '#60a5fa';
+                document.getElementById('borderColorValue').textContent = '#60a5fa';
+                document.getElementById('graticuleColor').value = '#334155';
+                document.getElementById('graticuleColorValue').textContent = '#334155';
+            } else if (theme === 'light') {
+                document.getElementById('bgColor').value = '#ffffff';
+                document.getElementById('bgColorValue').textContent = '#ffffff';
+                document.getElementById('waterColor').value = '#e0f2fe';
+                document.getElementById('waterColorValue').textContent = '#e0f2fe';
+                document.getElementById('landColor').value = '#f1f5f9';
+                document.getElementById('landColorValue').textContent = '#f1f5f9';
+                document.getElementById('borderColor').value = '#3b82f6';
+                document.getElementById('borderColorValue').textContent = '#3b82f6';
+                document.getElementById('graticuleColor').value = '#cbd5e1';
+                document.getElementById('graticuleColorValue').textContent = '#cbd5e1';
+            }
+            // For 'custom', don't change anything - let user manually adjust
+            
+            updateMapColors();
+        }
+
+        function loadAirportDatabase() {
+            if (window.loadedAirportData) {
+                const rawData = window.loadedAirportData;
+                
+                if (Array.isArray(rawData)) {
+                    airports = rawData
+                        .filter(airport => airport.iata && airport.latitude && airport.longitude)
+                        .map(airport => ({
+                            code: airport.iata,
+                            name: airport.name || airport.iata,
+                            city: airport.city || '',
+                            country: airport.country || '',
+                            lat: parseFloat(airport.latitude),
+                            lon: parseFloat(airport.longitude)
+                        }))
+                        .filter(a => a.code && !isNaN(a.lat) && !isNaN(a.lon));
+                } else if (typeof rawData === 'object') {
+                    airports = Object.entries(rawData)
+                        .filter(([code, airport]) => code && airport.latitude && airport.longitude)
+                        .map(([code, airport]) => ({
+                            code: code,
+                            name: airport.name || code,
+                            city: airport.city || '',
+                            country: airport.country || '',
+                            lat: parseFloat(airport.latitude),
+                            lon: parseFloat(airport.longitude)
+                        }))
+                        .filter(a => a.code && !isNaN(a.lat) && !isNaN(a.lon));
+                }
+                
+                console.log(`✈️ Successfully loaded ${airports.length} airports`);
+                document.getElementById('route-info').textContent = 'Add routes to view information';
+                initMap();
+                addRouteEntry();
+            }
+        }
+
+        window.addEventListener('airportDataLoaded', loadAirportDatabase);
+        
+        let loadAttempted = false;
+        setTimeout(() => {
+            if (window.airportDataReady && airports.length === 0 && !loadAttempted) {
+                loadAttempted = true;
+                loadAirportDatabase();
+            }
+        }, 1000);
+
+        document.getElementById('bgColor').addEventListener('input', (e) => {
+            document.getElementById('bgColorValue').textContent = e.target.value;
+            document.getElementById('theme').value = 'custom';
+        });
+        document.getElementById('waterColor').addEventListener('input', (e) => {
+            document.getElementById('waterColorValue').textContent = e.target.value;
+            document.getElementById('theme').value = 'custom';
+        });
+        document.getElementById('landColor').addEventListener('input', (e) => {
+            document.getElementById('landColorValue').textContent = e.target.value;
+            document.getElementById('theme').value = 'custom';
+        });
+        document.getElementById('borderColor').addEventListener('input', (e) => {
+            document.getElementById('borderColorValue').textContent = e.target.value;
+            document.getElementById('theme').value = 'custom';
+        });
+        document.getElementById('graticuleColor').addEventListener('input', (e) => {
+            document.getElementById('graticuleColorValue').textContent = e.target.value;
+            document.getElementById('theme').value = 'custom';
+        });
+        document.getElementById('labelSize').addEventListener('input', (e) => {
+            document.getElementById('labelSizeValue').textContent = e.target.value + 'px';
+        });
+
+        function resetLabelPositions() {
+            labelOffsets = {};
+            redrawAll();
+        }
+
+        function addRouteEntry() {
+            const id = ++routeEntryCount;
+            const container = document.getElementById('routeEntries');
+            
+            const colors = ['#f59e0b', '#ef4444', '#10b981', '#8b5cf6', '#ec4899', '#f97316'];
+            const colorIndex = (id - 1) % colors.length;
+            
+            const entry = document.createElement('div');
+            entry.className = 'route-entry';
+            entry.id = `route-entry-${id}`;
+            entry.style.borderLeftColor = colors[colorIndex];
+            entry.innerHTML = `
+                <div class="route-header" draggable="true">
+                    <span class="route-number">Group ${id}</span>
+                    <button class="remove-route" onclick="removeRouteEntry(${id})">Remove</button>
+                </div>
+                <div class="input-wrapper">
+                    <label>Route, Points, or Rings</label>
+                    <input type="text" id="route-input-${id}" placeholder="e.g., JFK-LHR or LAX, JFK or 1000nm@ATL">
+                    <div class="helper-text">Routes: LAX-ATL-ORD • Points: LAX, JFK • Rings: 1000nm@ATL, 500mi@JFK • Mixed: LAX-ATL, 1000nm@ORD</div>
+                </div>
+                <div class="style-grid">
+                    <div class="style-item">
+                        <label>Line Color</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="line-color-${id}" value="${colors[colorIndex]}" onchange="updateEntryColor(${id})">
+                            <span class="color-value" id="line-color-value-${id}">${colors[colorIndex]}</span>
+                        </div>
+                    </div>
+                    <div class="style-item">
+                        <label>Line Width</label>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                            <input type="range" id="line-width-${id}" min="1" max="8" value="2.5" step="0.5" style="flex: 1; cursor: pointer;">
+                            <span id="line-width-value-${id}" style="font-size: 0.9em; min-width: 35px;">2.5</span>
+                        </div>
+                    </div>
+                    <div class="style-item">
+                        <label>Line Style</label>
+                        <select id="line-style-${id}">
+                            <option value="solid">Solid</option>
+                            <option value="dashed">Dashed</option>
+                            <option value="dotted">Dotted</option>
+                        </select>
+                    </div>
+                    <div class="style-item">
+                        <label>Marker Color</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="marker-color-${id}" value="${colors[colorIndex]}" onchange="updateEntryColor(${id})">
+                            <span class="color-value" id="marker-color-value-${id}">${colors[colorIndex]}</span>
+                        </div>
+                    </div>
+                    <div class="style-item">
+                        <label>Marker Size</label>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                            <input type="range" id="marker-size-${id}" min="3" max="12" value="6" step="1" style="flex: 1; cursor: pointer;">
+                            <span id="marker-size-value-${id}" style="font-size: 0.9em; min-width: 35px;">6</span>
+                        </div>
+                    </div>
+                    <div class="style-item">
+                        <label>Marker Shape</label>
+                        <select id="marker-shape-${id}">
+                            <option value="circle">Circle</option>
+                            <option value="square">Square</option>
+                            <option value="diamond">Diamond</option>
+                            <option value="triangle">Triangle</option>
+                        </select>
+                    </div>
+                    <div class="style-item">
+                        <label>
+                            <input type="checkbox" id="show-markers-${id}" checked style="width: auto; margin-right: 8px;">
+                            Show Markers
+                        </label>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(entry);
+            
+            const header = entry.querySelector('.route-header');
+            header.addEventListener('dragstart', handleDragStart);
+            header.addEventListener('dragend', handleDragEnd);
+            entry.addEventListener('dragover', handleDragOver);
+            entry.addEventListener('drop', handleDrop);
+            entry.addEventListener('dragenter', handleDragEnter);
+            entry.addEventListener('dragleave', handleDragLeave);
+            
+            document.getElementById(`line-color-${id}`).addEventListener('input', (e) => {
+                document.getElementById(`line-color-value-${id}`).textContent = e.target.value;
+                if (drawnRoutes.length > 0) drawAllRoutes();
+            });
+            document.getElementById(`marker-color-${id}`).addEventListener('input', (e) => {
+                document.getElementById(`marker-color-value-${id}`).textContent = e.target.value;
+                if (drawnRoutes.length > 0) drawAllRoutes();
+            });
+            document.getElementById(`line-width-${id}`).addEventListener('input', (e) => {
+                document.getElementById(`line-width-value-${id}`).textContent = e.target.value;
+                if (drawnRoutes.length > 0) drawAllRoutes();
+            });
+            document.getElementById(`line-style-${id}`).addEventListener('change', () => {
+                if (drawnRoutes.length > 0) drawAllRoutes();
+            });
+            document.getElementById(`marker-size-${id}`).addEventListener('input', (e) => {
+                document.getElementById(`marker-size-value-${id}`).textContent = e.target.value;
+                if (drawnRoutes.length > 0) drawAllRoutes();
+            });
+            document.getElementById(`marker-shape-${id}`).addEventListener('change', () => {
+                if (drawnRoutes.length > 0) drawAllRoutes();
+            });
+            document.getElementById(`show-markers-${id}`).addEventListener('change', () => {
+                if (drawnRoutes.length > 0) drawAllRoutes();
+            });
+        }
+
+        let draggedElement = null;
+        let dragStartY = 0;
+        let isDragging = false;
+
+        function handleDragStart(e) {
+            draggedElement = this.closest('.route-entry');
+            dragStartY = e.clientY;
+            isDragging = false;
+            draggedElement.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', draggedElement.innerHTML);
+        }
+
+        function handleDragEnd(e) {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+            }
+            document.querySelectorAll('.route-entry').forEach(entry => {
+                entry.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            if (this !== draggedElement) {
+                this.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+
+            if (draggedElement !== this) {
+                const container = document.getElementById('routeEntries');
+                const allEntries = [...container.children];
+                const draggedIndex = allEntries.indexOf(draggedElement);
+                const targetIndex = allEntries.indexOf(this);
+
+                if (draggedIndex < targetIndex) {
+                    container.insertBefore(draggedElement, this.nextSibling);
+                } else {
+                    container.insertBefore(draggedElement, this);
+                }
+                
+                if (drawnRoutes.length > 0) {
+                    drawAllRoutes();
+                }
+            }
+
+            return false;
+        }
+
+        function updateEntryColor(id) {
+            const entry = document.getElementById(`route-entry-${id}`);
+            const lineColor = document.getElementById(`line-color-${id}`).value;
+            if (entry) {
+                entry.style.borderLeftColor = lineColor;
+            }
+        }
+
+        function removeRouteEntry(id) {
+            const entry = document.getElementById(`route-entry-${id}`);
+            if (entry) {
+                entry.remove();
+                if (drawnRoutes.length > 0) {
+                    drawAllRoutes();
+                }
+            }
+        }
+
+        function initMap() {
+            const container = document.getElementById('map');
+            width = container.clientWidth;
+            height = 788;
+
+            d3.select("#map").selectAll("*").remove();
+
+            svg = d3.select("#map")
+                .attr("width", width)
+                .attr("height", height);
+
+            g = svg.append("g");
+
+            updateProjection();
+            loadWorldMap();
+        }
+
+        function isPlanarProjection(projType) {
+            return projType === 'equirectangular' || 
+                   projType === 'mercator' || 
+                   projType === 'naturalEarth' ||
+                   projType === 'lambertConformal' ||
+                   projType === 'albers' ||
+                   projType === 'winkelTripel' ||
+                   projType === 'robinson';
+        }
+
+        function updateProjection() {
+            const projType = document.getElementById('projection').value;
+            const previousProjType = projection ? 
+                (projection.parallels ? 'conic' : (isPlanarProjection(projType) ? 'planar' : 'azimuthal')) : null;
+            
+            if (projection) {
+                savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
+                savedViewState.translate = projection.translate ? projection.translate() : [width / 2, height / 2];
+                savedViewState.zoom = currentZoom;
+            }
+            
+            const isConic = projType === 'lambertConformal' || projType === 'albers';
+            const isAzimuthal = !isPlanarProjection(projType) && !isConic;
+            const wasPlanarProjection = previousProjType === 'planar';
+            const wasConicProjection = previousProjType === 'conic';
+            
+            let centerTranslate = savedViewState.translate || [width / 2, height / 2];
+            
+            if ((wasConicProjection && !isConic) || (wasPlanarProjection && isAzimuthal)) {
+                centerTranslate = [width / 2, height / 2];
+            }
+            
+            if (wasPlanarProjection && isAzimuthal) {
+                currentZoom = 1;
+            }
+            
+            if (svg) {
+                svg.on('.zoom', null);
+                svg.on('wheel', null);
+                svg.on('.drag', null);
+            }
+            
+            if (g) {
+                g.attr('transform', null);
+            }
+            
+            switch(projType) {
+                case 'orthographic':
+                    projection = d3.geoOrthographic()
+                        .scale(Math.min(width, height) / 2.2 * currentZoom)
+                        .translate([width / 2, height / 2])
+                        .rotate(savedViewState.rotation)
+                        .clipAngle(90);
+                    break;
+                case 'equirectangular':
+                    projection = d3.geoEquirectangular()
+                        .scale(width / (2 * Math.PI) * currentZoom)
+                        .translate(centerTranslate)
+                        .rotate([savedViewState.rotation[0], 0, 0]);
+                    break;
+                case 'mercator':
+                    projection = d3.geoMercator()
+                        .scale(width / (2 * Math.PI) * currentZoom)
+                        .translate(centerTranslate)
+                        .rotate([savedViewState.rotation[0], 0, 0]);
+                    break;
+                case 'naturalEarth':
+                    projection = d3.geoNaturalEarth1()
+                        .scale(width / 5.5 * currentZoom)
+                        .translate(centerTranslate)
+                        .rotate([savedViewState.rotation[0], 0, 0]);
+                    break;
+                case 'azimuthalEquidistant':
+                    projection = d3.geoAzimuthalEquidistant()
+                        .scale(width / 4 * currentZoom)
+                        .translate([width / 2, height / 2])
+                        .rotate(savedViewState.rotation)
+                        .clipAngle(180);
+                    break;
+                case 'stereographic':
+                    projection = d3.geoStereographic()
+                        .scale(width / 4 * currentZoom)
+                        .translate([width / 2, height / 2])
+                        .rotate(savedViewState.rotation)
+                        .clipAngle(120);
+                    break;
+                case 'azimuthalEqualArea':
+                    projection = d3.geoAzimuthalEqualArea()
+                        .scale(width / 4 * currentZoom)
+                        .translate([width / 2, height / 2])
+                        .rotate(savedViewState.rotation)
+                        .clipAngle(180);
+                    break;
+                case 'lambertConformal':
+                    projection = d3.geoConicConformal()
+                        .parallels([20, 60])
+                        .scale(width / 4 * currentZoom)
+                        .translate(centerTranslate)
+                        .rotate([savedViewState.rotation[0], 0, 0]);
+                    break;
+                case 'albers':
+                    projection = d3.geoAlbers()
+                        .scale(width / 5 * currentZoom)
+                        .translate(centerTranslate)
+                        .rotate([savedViewState.rotation[0], 0, 0]);
+                    break;
+                case 'gnomonic':
+                    projection = d3.geoGnomonic()
+                        .scale(width / 4 * currentZoom)
+                        .translate([width / 2, height / 2])
+                        .rotate(savedViewState.rotation)
+                        .clipAngle(60);
+                    break;
+                case 'winkelTripel':
+                    projection = d3.geoWinkel3()
+                        .scale(width / 5.5 * currentZoom)
+                        .translate(centerTranslate)
+                        .rotate([savedViewState.rotation[0], 0, 0]);
+                    break;
+                case 'robinson':
+                    projection = d3.geoRobinson()
+                        .scale(width / 5.5 * currentZoom)
+                        .translate(centerTranslate)
+                        .rotate([savedViewState.rotation[0], 0, 0]);
+                    break;
+            }
+
+            path = d3.geoPath().projection(projection);
+        }
+
+        function getBaseScale() {
+            const projType = document.getElementById('projection').value;
+            switch(projType) {
+                case 'orthographic':
+                    return Math.min(width, height) / 2.2;
+                case 'equirectangular':
+                    return width / (2 * Math.PI);
+                case 'mercator':
+                    return width / (2 * Math.PI);
+                case 'naturalEarth':
+                    return width / 5.5;
+                case 'azimuthalEquidistant':
+                    return width / 4;
+                case 'stereographic':
+                    return width / 4;
+                case 'azimuthalEqualArea':
+                    return width / 4;
+                case 'lambertConformal':
+                    return width / 4;
+                case 'albers':
+                    return width / 5;
+                case 'gnomonic':
+                    return width / 4;
+                case 'winkelTripel':
+                    return width / 5.5;
+                case 'robinson':
+                    return width / 5.5;
+                default:
+                    return width / 2.2;
+            }
+        }
+
+        function loadWorldMap() {
+            d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
+                .then(world => {
+                    g.selectAll("*").remove();
+
+                    // Always draw sphere fill (ocean/water) regardless of border setting
                     g.append("path")
                         .datum({type: "Sphere"})
                         .attr("class", "sphere")
                         .attr("d", path)
                         .style("fill", document.getElementById('waterColor').value);
-                }
 
-                const showGraticule = document.getElementById('showGraticule').checked;
-                
-                if (showGraticule) {
+                    const showGraticule = document.getElementById('showGraticule').checked;
+                    
+                    if (showGraticule) {
+                        g.append("path")
+                            .datum(d3.geoGraticule())
+                            .attr("class", "graticule")
+                            .attr("d", path)
+                            .style("stroke", document.getElementById('graticuleColor').value);
+                    }
+
                     g.append("path")
-                        .datum(d3.geoGraticule())
-                        .attr("class", "graticule")
+                        .datum(topojson.feature(world, world.objects.countries))
+                        .attr("class", "land")
                         .attr("d", path)
-                        .style("stroke", document.getElementById('graticuleColor').value);
-                }
+                        .style("fill", document.getElementById('landColor').value);
 
-                g.append("path")
-                    .datum(topojson.feature(world, world.objects.countries))
-                    .attr("class", "land")
-                    .attr("d", path)
-                    .style("fill", document.getElementById('landColor').value);
+                    // Draw sphere border on top only if enabled
+                    const showBorder = document.getElementById('showBorder').checked;
+                    if (showBorder) {
+                        g.append("path")
+                            .datum({type: "Sphere"})
+                            .attr("class", "sphere-border")
+                            .attr("d", path)
+                            .style("stroke", document.getElementById('borderColor').value);
+                    }
 
-                if (showBorder) {
-                    g.append("path")
-                        .datum({type: "Sphere"})
-                        .attr("class", "sphere-border")
-                        .attr("d", path)
-                        .style("stroke", document.getElementById('borderColor').value);
-                }
-
-                const projType = document.getElementById('projection').value;
-                
-                if (isPlanarProjection(projType)) {
-                    svg.on('wheel', (event) => {
-                        event.preventDefault();
-                        
-                        const delta = -event.deltaY;
-                        const scaleFactor = delta > 0 ? 1.1 : 0.9;
-                        currentZoom *= scaleFactor;
-                        currentZoom = Math.max(0.5, Math.min(8, currentZoom));
-                        
-                        const baseScale = getBaseScale();
-                        projection.scale(baseScale * currentZoom);
-                        
-                        g.selectAll('path').attr('d', path);
-                        redrawAll();
-                    });
-
-                    const drag = d3.drag()
-                        .filter((event) => !event.shiftKey)
-                        .on('drag', (event) => {
-                            const currentRotate = projection.rotate();
-                            const currentTranslate = projection.translate();
-                            const sensitivity = 0.25;
+                    const projType = document.getElementById('projection').value;
+                    
+                    if (isPlanarProjection(projType)) {
+                        svg.on('wheel', (event) => {
+                            event.preventDefault();
                             
-                            const newLongitude = currentRotate[0] + event.dx * sensitivity;
-                            projection.rotate([newLongitude, 0, 0]);
+                            const delta = -event.deltaY;
+                            const scaleFactor = delta > 0 ? 1.1 : 0.9;
+                            currentZoom *= scaleFactor;
+                            currentZoom = Math.max(0.5, Math.min(8, currentZoom));
                             
-                            const newTranslateY = currentTranslate[1] + event.dy;
-                            
-                            const maxPanY = height * 0.7 * Math.max(1, currentZoom);
-                            const minY = height / 2 - maxPanY;
-                            const maxY = height / 2 + maxPanY;
-                            const clampedTranslateY = Math.max(minY, Math.min(maxY, newTranslateY));
-                            
-                            projection.translate([currentTranslate[0], clampedTranslateY]);
+                            const baseScale = getBaseScale();
+                            projection.scale(baseScale * currentZoom);
                             
                             g.selectAll('path').attr('d', path);
                             redrawAll();
                         });
-                    svg.call(drag);
-                } else {
-                    svg.on('wheel', (event) => {
-                        event.preventDefault();
-                        
-                        const delta = -event.deltaY;
-                        const scaleFactor = delta > 0 ? 1.1 : 0.9;
-                        currentZoom *= scaleFactor;
-                        currentZoom = Math.max(0.5, Math.min(8, currentZoom));
-                        
-                        const baseScale = getBaseScale();
-                        projection.scale(baseScale * currentZoom);
-                        
-                        g.selectAll('path').attr('d', path);
-                        redrawAll();
-                    });
 
-                    const drag = d3.drag()
-                        .filter((event) => !event.shiftKey)
-                        .on('drag', (event) => {
-                            const rotate = projection.rotate();
-                            const sensitivity = projType === 'orthographic' ? 0.5 : 0.3;
-                            projection.rotate([
-                                rotate[0] + event.dx * sensitivity, 
-                                rotate[1] - event.dy * sensitivity
-                            ]);
+                        const drag = d3.drag()
+                            .filter((event) => !event.shiftKey)
+                            .on('drag', (event) => {
+                                const currentRotate = projection.rotate();
+                                const currentTranslate = projection.translate();
+                                const sensitivity = 0.25;
+                                
+                                const newLongitude = currentRotate[0] + event.dx * sensitivity;
+                                projection.rotate([newLongitude, 0, 0]);
+                                
+                                const newTranslateY = currentTranslate[1] + event.dy;
+                                
+                                const maxPanY = height * 0.7 * Math.max(1, currentZoom);
+                                const minY = height / 2 - maxPanY;
+                                const maxY = height / 2 + maxPanY;
+                                const clampedTranslateY = Math.max(minY, Math.min(maxY, newTranslateY));
+                                
+                                projection.translate([currentTranslate[0], clampedTranslateY]);
+                                
+                                g.selectAll('path').attr('d', path);
+                                redrawAll();
+                            });
+                        svg.call(drag);
+                    } else {
+                        svg.on('wheel', (event) => {
+                            event.preventDefault();
+                            
+                            const delta = -event.deltaY;
+                            const scaleFactor = delta > 0 ? 1.1 : 0.9;
+                            currentZoom *= scaleFactor;
+                            currentZoom = Math.max(0.5, Math.min(8, currentZoom));
+                            
+                            const baseScale = getBaseScale();
+                            projection.scale(baseScale * currentZoom);
+                            
                             g.selectAll('path').attr('d', path);
                             redrawAll();
                         });
-                    svg.call(drag);
-                }
-                
-                if (drawnRoutes.length > 0) {
-                    redrawAll();
-                }
+
+                        const drag = d3.drag()
+                            .filter((event) => !event.shiftKey)
+                            .on('drag', (event) => {
+                                const rotate = projection.rotate();
+                                const sensitivity = projType === 'orthographic' ? 0.5 : 0.3;
+                                projection.rotate([
+                                    rotate[0] + event.dx * sensitivity, 
+                                    rotate[1] - event.dy * sensitivity
+                                ]);
+                                g.selectAll('path').attr('d', path);
+                                redrawAll();
+                            });
+                        svg.call(drag);
+                    }
+                    
+                    if (drawnRoutes.length > 0) {
+                        redrawAll();
+                    }
+                });
+        }
+
+        function redrawAll() {
+            g.selectAll('.path').remove();
+            g.selectAll('.airport').remove();
+            g.selectAll('.airport-label').remove();
+            g.selectAll('.ring').remove();
+            
+            drawnRoutes.forEach(routeData => {
+                drawRouteLines(routeData);
+                drawRings(routeData);
+                drawMarkers(routeData);
             });
-    }
+            
+            drawnRoutes.forEach(routeData => {
+                drawLabels(routeData);
+            });
+        }
 
-    function redrawAll() {
-        g.selectAll('.path').remove();
-        g.selectAll('.airport').remove();
-        g.selectAll('.airport-label').remove();
-        g.selectAll('.ring').remove();
-        
-        drawnRoutes.forEach(routeData => {
-            drawRouteLines(routeData);
-            drawRings(routeData);
-            drawMarkers(routeData);
-        });
-        
-        drawnRoutes.forEach(routeData => {
-            drawLabels(routeData);
-        });
-    }
-
-    function drawRings(routeData) {
-        const { rings, style } = routeData;
-        
-        if (!rings || rings.length === 0) return;
-        
-        rings.forEach(ring => {
-            const center = [ring.airport.lon, ring.airport.lat];
+        function drawRings(routeData) {
+            const { rings, style } = routeData;
             
-            // Calculate the radius in degrees (approximate)
-            const radiusInDegrees = (ring.distanceMeters / 1000) / 111.32; // rough conversion
+            if (!rings || rings.length === 0) return;
             
-            // Create circle points
-            const numPoints = 360;
-            const circlePoints = [];
-            
-            for (let i = 0; i <= numPoints; i++) {
-                const angle = (i * 360 / numPoints) * Math.PI / 180;
+            rings.forEach(ring => {
+                const center = [ring.airport.lon, ring.airport.lat];
                 
-                // Calculate destination point using great circle formula
-                const lat1 = ring.airport.lat * Math.PI / 180;
-                const lon1 = ring.airport.lon * Math.PI / 180;
-                const angularDistance = ring.distanceMeters / 6371000; // Earth radius in meters
+                // Calculate the radius in degrees (approximate)
+                const radiusInDegrees = (ring.distanceMeters / 1000) / 111.32; // rough conversion
                 
-                const lat2 = Math.asin(
-                    Math.sin(lat1) * Math.cos(angularDistance) +
-                    Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(angle)
-                );
+                // Create circle points
+                const numPoints = 360;
+                const circlePoints = [];
                 
-                const lon2 = lon1 + Math.atan2(
-                    Math.sin(angle) * Math.sin(angularDistance) * Math.cos(lat1),
-                    Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
-                );
-                
-                circlePoints.push([
-                    lon2 * 180 / Math.PI,
-                    lat2 * 180 / Math.PI
-                ]);
-            }
-            
-            g.append("path")
-                .datum({type: "LineString", coordinates: circlePoints})
-                .attr("class", "ring")
-                .attr("d", path)
-                .style("stroke", style.lineColor)
-                .style("stroke-width", style.lineWidth)
-                .style("fill", "none")
-                .style("stroke-dasharray", 
-                    style.lineStyle === 'dashed' ? `${style.lineWidth * 4},${style.lineWidth * 2}` : 
-                    style.lineStyle === 'dotted' ? `${style.lineWidth * 0.5},${style.lineWidth * 1.5}` : 'none');
-        });
-    }
-
-    function drawRouteLines(routeData) {
-        const { routes, style } = routeData;
-        
-        routes.forEach(airportList => {
-            for (let i = 0; i < airportList.length - 1; i++) {
-                const origin = airportList[i];
-                const destination = airportList[i + 1];
-                
-                const interpolate = d3.geoInterpolate(
-                    [origin.lon, origin.lat],
-                    [destination.lon, destination.lat]
-                );
-                const pathPoints = d3.range(0, 1.01, 0.01).map(interpolate);
+                for (let i = 0; i <= numPoints; i++) {
+                    const angle = (i * 360 / numPoints) * Math.PI / 180;
+                    
+                    // Calculate destination point using great circle formula
+                    const lat1 = ring.airport.lat * Math.PI / 180;
+                    const lon1 = ring.airport.lon * Math.PI / 180;
+                    const angularDistance = ring.distanceMeters / 6371000; // Earth radius in meters
+                    
+                    const lat2 = Math.asin(
+                        Math.sin(lat1) * Math.cos(angularDistance) +
+                        Math.cos(lat1) * Math.sin(angularDistance) * Math.cos(angle)
+                    );
+                    
+                    const lon2 = lon1 + Math.atan2(
+                        Math.sin(angle) * Math.sin(angularDistance) * Math.cos(lat1),
+                        Math.cos(angularDistance) - Math.sin(lat1) * Math.sin(lat2)
+                    );
+                    
+                    circlePoints.push([
+                        lon2 * 180 / Math.PI,
+                        lat2 * 180 / Math.PI
+                    ]);
+                }
                 
                 g.append("path")
-                    .datum({type: "LineString", coordinates: pathPoints})
-                    .attr("class", "path")
+                    .datum({type: "LineString", coordinates: circlePoints})
+                    .attr("class", "ring")
                     .attr("d", path)
                     .style("stroke", style.lineColor)
                     .style("stroke-width", style.lineWidth)
+                    .style("fill", "none")
                     .style("stroke-dasharray", 
                         style.lineStyle === 'dashed' ? `${style.lineWidth * 4},${style.lineWidth * 2}` : 
                         style.lineStyle === 'dotted' ? `${style.lineWidth * 0.5},${style.lineWidth * 1.5}` : 'none');
-            }
-        });
-    }
+            });
+        }
 
-    function drawMarkers(routeData) {
-        const { routes, points, rings, style } = routeData;
-        
-        const allAirports = new Set();
-        routes.forEach(route => route.forEach(apt => allAirports.add(apt)));
-        points.forEach(apt => allAirports.add(apt));
-        rings.forEach(ring => allAirports.add(ring.airport));
-        
-        const projType = document.getElementById('projection').value;
-        
-        allAirports.forEach(airport => {
-            const coords = projection([airport.lon, airport.lat]);
-            if (!coords || isNaN(coords[0]) || isNaN(coords[1])) return;
+        function drawRouteLines(routeData) {
+            const { routes, style } = routeData;
             
-            if (projType === 'orthographic' || projType === 'stereographic' || projType === 'gnomonic') {
-                const distance = d3.geoDistance([airport.lon, airport.lat], projection.invert(projection.translate()));
-                const clipAngle = projection.clipAngle ? projection.clipAngle() * Math.PI / 180 : Math.PI / 2;
-                if (distance > clipAngle) return;
-            }
-            
-            const size = style.markerSize;
-            
-            if (style.showMarkers) {
-                if (style.markerShape === 'circle') {
-                    g.append('circle')
-                        .datum(airport)
-                        .attr('class', 'airport')
-                        .attr('cx', coords[0])
-                        .attr('cy', coords[1])
-                        .attr('r', size)
-                        .style('fill', style.markerColor);
-                } else if (style.markerShape === 'square') {
-                    const s = size * 1.5;
-                    g.append('rect')
-                        .datum(airport)
-                        .attr('class', 'airport')
-                        .attr('x', coords[0] - s)
-                        .attr('y', coords[1] - s)
-                        .attr('width', s * 2)
-                        .attr('height', s * 2)
-                        .style('fill', style.markerColor);
-                } else if (style.markerShape === 'diamond') {
-                    const s = size * 1.8;
-                    g.append('path')
-                        .datum(airport)
-                        .attr('class', 'airport')
-                        .attr('d', `M ${coords[0]} ${coords[1] - s} L ${coords[0] + s} ${coords[1]} L ${coords[0]} ${coords[1] + s} L ${coords[0] - s} ${coords[1]} Z`)
-                        .style('fill', style.markerColor);
-                } else if (style.markerShape === 'triangle') {
-                    const s = size * 1.8;
-                    g.append('path')
-                        .datum(airport)
-                        .attr('class', 'airport')
-                        .attr('d', `M ${coords[0]} ${coords[1] - s} L ${coords[0] + s} ${coords[1] + s} L ${coords[0] - s} ${coords[1] + s} Z`)
-                        .style('fill', style.markerColor);
+            routes.forEach(airportList => {
+                for (let i = 0; i < airportList.length - 1; i++) {
+                    const origin = airportList[i];
+                    const destination = airportList[i + 1];
+                    
+                    const interpolate = d3.geoInterpolate(
+                        [origin.lon, origin.lat],
+                        [destination.lon, destination.lat]
+                    );
+                    const pathPoints = d3.range(0, 1.01, 0.01).map(interpolate);
+                    
+                    g.append("path")
+                        .datum({type: "LineString", coordinates: pathPoints})
+                        .attr("class", "path")
+                        .attr("d", path)
+                        .style("stroke", style.lineColor)
+                        .style("stroke-width", style.lineWidth)
+                        .style("stroke-dasharray", 
+                            style.lineStyle === 'dashed' ? `${style.lineWidth * 4},${style.lineWidth * 2}` : 
+                            style.lineStyle === 'dotted' ? `${style.lineWidth * 0.5},${style.lineWidth * 1.5}` : 'none');
                 }
-            }
-        });
-    }
+            });
+        }
 
-    function drawLabels(routeData) {
-        const { routes, points, rings, style } = routeData;
-        
-        const allAirports = new Set();
-        routes.forEach(route => route.forEach(apt => allAirports.add(apt)));
-        points.forEach(apt => allAirports.add(apt));
-        rings.forEach(ring => allAirports.add(ring.airport));
-        
-        const showLabels = document.getElementById('showLabels').checked;
-        const projType = document.getElementById('projection').value;
-        
-        allAirports.forEach(airport => {
-            const coords = projection([airport.lon, airport.lat]);
-            if (!coords || isNaN(coords[0]) || isNaN(coords[1])) return;
+        function drawMarkers(routeData) {
+            const { routes, points, rings, style } = routeData;
             
-            if (projType === 'orthographic' || projType === 'stereographic' || projType === 'gnomonic') {
-                const distance = d3.geoDistance([airport.lon, airport.lat], projection.invert(projection.translate()));
-                const clipAngle = projection.clipAngle ? projection.clipAngle() * Math.PI / 180 : Math.PI / 2;
-                if (distance > clipAngle) return;
-            }
+            const allAirports = new Set();
+            routes.forEach(route => route.forEach(apt => allAirports.add(apt)));
+            points.forEach(apt => allAirports.add(apt));
+            rings.forEach(ring => allAirports.add(ring.airport));
             
-            const size = style.markerSize;
+            const projType = document.getElementById('projection').value;
             
-            if (showLabels) {
-                const labelSize = document.getElementById('labelSize').value;
-                const labelPosition = document.getElementById('labelPosition').value;
-                const offset = labelOffsets[airport.code] || { x: 0, y: 0 };
+            allAirports.forEach(airport => {
+                const coords = projection([airport.lon, airport.lat]);
+                if (!coords || isNaN(coords[0]) || isNaN(coords[1])) return;
                 
-                let xPos = coords[0] + offset.x;
-                let yPos = coords[1] + offset.y;
-                let anchor = "middle";
+                if (projType === 'orthographic' || projType === 'stereographic' || projType === 'gnomonic') {
+                    const distance = d3.geoDistance([airport.lon, airport.lat], projection.invert(projection.translate()));
+                    const clipAngle = projection.clipAngle ? projection.clipAngle() * Math.PI / 180 : Math.PI / 2;
+                    if (distance > clipAngle) return;
+                }
                 
-                if (!labelOffsets[airport.code]) {
-                    switch(labelPosition) {
-                        case 'top':
-                            yPos = coords[1] - 12 - size;
-                            anchor = "middle";
-                            break;
-                        case 'bottom':
-                            yPos = coords[1] + 12 + size;
-                            anchor = "middle";
-                            break;
-                        case 'left':
-                            xPos = coords[0] - 12 - size;
-                            yPos = coords[1] + 4;
-                            anchor = "end";
-                            break;
-                        case 'right':
-                            xPos = coords[0] + 12 + size;
-                            yPos = coords[1] + 4;
-                            anchor = "start";
-                            break;
-                        case 'center':
-                            yPos = coords[1] + 4;
-                            anchor = "middle";
-                            break;
+                const size = style.markerSize;
+                
+                if (style.showMarkers) {
+                    if (style.markerShape === 'circle') {
+                        g.append('circle')
+                            .datum(airport)
+                            .attr('class', 'airport')
+                            .attr('cx', coords[0])
+                            .attr('cy', coords[1])
+                            .attr('r', size)
+                            .style('fill', style.markerColor);
+                    } else if (style.markerShape === 'square') {
+                        const s = size * 1.5;
+                        g.append('rect')
+                            .datum(airport)
+                            .attr('class', 'airport')
+                            .attr('x', coords[0] - s)
+                            .attr('y', coords[1] - s)
+                            .attr('width', s * 2)
+                            .attr('height', s * 2)
+                            .style('fill', style.markerColor);
+                    } else if (style.markerShape === 'diamond') {
+                        const s = size * 1.8;
+                        g.append('path')
+                            .datum(airport)
+                            .attr('class', 'airport')
+                            .attr('d', `M ${coords[0]} ${coords[1] - s} L ${coords[0] + s} ${coords[1]} L ${coords[0]} ${coords[1] + s} L ${coords[0] - s} ${coords[1]} Z`)
+                            .style('fill', style.markerColor);
+                    } else if (style.markerShape === 'triangle') {
+                        const s = size * 1.8;
+                        g.append('path')
+                            .datum(airport)
+                            .attr('class', 'airport')
+                            .attr('d', `M ${coords[0]} ${coords[1] - s} L ${coords[0] + s} ${coords[1] + s} L ${coords[0] - s} ${coords[1] + s} Z`)
+                            .style('fill', style.markerColor);
                     }
-                } else {
-                    yPos = coords[1] - 12 - size + offset.y;
+                }
+            });
+        }
+
+        function drawLabels(routeData) {
+            const { routes, points, rings, style } = routeData;
+            
+            const allAirports = new Set();
+            routes.forEach(route => route.forEach(apt => allAirports.add(apt)));
+            points.forEach(apt => allAirports.add(apt));
+            rings.forEach(ring => allAirports.add(ring.airport));
+            
+            const showLabels = document.getElementById('showLabels').checked;
+            const projType = document.getElementById('projection').value;
+            
+            allAirports.forEach(airport => {
+                const coords = projection([airport.lon, airport.lat]);
+                if (!coords || isNaN(coords[0]) || isNaN(coords[1])) return;
+                
+                if (projType === 'orthographic' || projType === 'stereographic' || projType === 'gnomonic') {
+                    const distance = d3.geoDistance([airport.lon, airport.lat], projection.invert(projection.translate()));
+                    const clipAngle = projection.clipAngle ? projection.clipAngle() * Math.PI / 180 : Math.PI / 2;
+                    if (distance > clipAngle) return;
                 }
                 
-                const label = g.append("text")
-                    .datum(airport)
-                    .attr("class", "airport-label")
-                    .attr("x", xPos)
-                    .attr("y", yPos)
-                    .attr("text-anchor", anchor)
-                    .style("font-size", labelSize + "px")
-                    .style("cursor", "move")
-                    .style("user-select", "none")
-                    .text(getLabelText(airport));
+                const size = style.markerSize;
                 
-                const labelDrag = d3.drag()
-                    .filter((event) => event.shiftKey)
-                    .on('start', (event) => {
-                        event.sourceEvent.stopPropagation();
-                    })
-                    .on('drag', (event) => {
-                        event.sourceEvent.stopPropagation();
-                        
-                        if (!labelOffsets[airport.code]) {
-                            labelOffsets[airport.code] = { x: 0, y: 0 };
+                if (showLabels) {
+                    const labelSize = document.getElementById('labelSize').value;
+                    const labelPosition = document.getElementById('labelPosition').value;
+                    const offset = labelOffsets[airport.code] || { x: 0, y: 0 };
+                    
+                    let xPos = coords[0] + offset.x;
+                    let yPos = coords[1] + offset.y;
+                    let anchor = "middle";
+                    let dominantBaseline = "auto";
+                    
+                    if (!labelOffsets[airport.code]) {
+                        const gap = 8; // gap between marker and label
+                        switch(labelPosition) {
+                            case 'top':
+                                yPos = coords[1] - gap - size;
+                                anchor = "middle";
+                                break;
+                            case 'bottom':
+                                yPos = coords[1] + gap + size;
+                                anchor = "middle";
+                                dominantBaseline = "hanging";
+                                break;
+                            case 'left':
+                                xPos = coords[0] - gap - size;
+                                yPos = coords[1];
+                                anchor = "end";
+                                dominantBaseline = "middle";
+                                break;
+                            case 'right':
+                                xPos = coords[0] + gap + size;
+                                yPos = coords[1];
+                                anchor = "start";
+                                dominantBaseline = "middle";
+                                break;
+                            case 'center':
+                                yPos = coords[1];
+                                anchor = "middle";
+                                dominantBaseline = "middle";
+                                break;
                         }
-                        labelOffsets[airport.code].x += event.dx;
-                        labelOffsets[airport.code].y += event.dy;
-                        
-                        d3.select(event.sourceEvent.target)
-                            .attr('x', coords[0] + labelOffsets[airport.code].x)
-                            .attr('y', coords[1] - 12 - size + labelOffsets[airport.code].y);
-                    })
-                    .on('end', (event) => {
-                        event.sourceEvent.stopPropagation();
-                    });
-                
-                label.call(labelDrag);
-            }
-        });
-    }
-
-    function vincentyDistance(lat1, lon1, lat2, lon2) {
-        const a = 6378137.0;
-        const b = 6356752.314245;
-        const f = 1 / 298.257223563;
-
-        const L = (lon2 - lon1) * Math.PI / 180;
-        const U1 = Math.atan((1 - f) * Math.tan(lat1 * Math.PI / 180));
-        const U2 = Math.atan((1 - f) * Math.tan(lat2 * Math.PI / 180));
-        const sinU1 = Math.sin(U1), cosU1 = Math.cos(U1);
-        const sinU2 = Math.sin(U2), cosU2 = Math.cos(U2);
-
-        let lambda = L, lambdaP, iterLimit = 100;
-        let cosSqAlpha, sinSigma, cos2SigmaM, cosSigma, sigma;
-
-        do {
-            const sinLambda = Math.sin(lambda), cosLambda = Math.cos(lambda);
-            sinSigma = Math.sqrt((cosU2 * sinLambda) * (cosU2 * sinLambda) +
-                (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) * (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda));
-            
-            if (sinSigma === 0) return 0;
-            
-            cosSigma = sinU1 * sinU2 + cosU1 * cosU2 * cosLambda;
-            sigma = Math.atan2(sinSigma, cosSigma);
-            const sinAlpha = cosU1 * cosU2 * sinLambda / sinSigma;
-            cosSqAlpha = 1 - sinAlpha * sinAlpha;
-            cos2SigmaM = cosSigma - 2 * sinU1 * sinU2 / cosSqAlpha;
-            
-            if (isNaN(cos2SigmaM)) cos2SigmaM = 0;
-            
-            const C = f / 16 * cosSqAlpha * (4 + f * (4 - 3 * cosSqAlpha));
-            lambdaP = lambda;
-            lambda = L + (1 - C) * f * sinAlpha *
-                (sigma + C * sinSigma * (cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)));
-        } while (Math.abs(lambda - lambdaP) > 1e-12 && --iterLimit > 0);
-
-        if (iterLimit === 0) return NaN;
-
-        const uSq = cosSqAlpha * (a * a - b * b) / (b * b);
-        const A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
-        const B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
-        const deltaSigma = B * sinSigma * (cos2SigmaM + B / 4 * (cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM) -
-            B / 6 * cos2SigmaM * (-3 + 4 * sinSigma * sinSigma) * (-3 + 4 * cos2SigmaM * cos2SigmaM)));
-
-        return b * A * (sigma - deltaSigma);
-    }
-
-    function parseRouteInput(input) {
-        const items = input.split(',').map(r => r.trim()).filter(r => r.length > 0);
-        const routes = [];
-        const singlePoints = [];
-        const rings = [];
-        
-        for (let item of items) {
-            // Check if it's a ring (format: distance@airport)
-            const ringMatch = item.match(/^(\d+(?:\.\d+)?)(nm|mi|km)\s*@\s*([A-Z]{3})$/i);
-            if (ringMatch) {
-                const distance = parseFloat(ringMatch[1]);
-                const unit = ringMatch[2].toLowerCase();
-                const airportCode = ringMatch[3].toUpperCase();
-                
-                const airport = airports.find(a => a.code === airportCode);
-                if (!airport) {
-                    alert(`Airport code "${airportCode}" not found.`);
-                    return null;
+                    } else {
+                        yPos = coords[1] - 8 - size + offset.y;
+                    }
+                    
+                    const label = g.append("text")
+                        .datum(airport)
+                        .attr("class", "airport-label")
+                        .attr("x", xPos)
+                        .attr("y", yPos)
+                        .attr("text-anchor", anchor)
+                        .attr("dominant-baseline", dominantBaseline)
+                        .style("font-size", labelSize + "px")
+                        .style("cursor", "move")
+                        .style("user-select", "none")
+                        .text(getLabelText(airport));
+                    
+                    const labelDrag = d3.drag()
+                        .filter((event) => event.shiftKey)
+                        .on('start', (event) => {
+                            event.sourceEvent.stopPropagation();
+                        })
+                        .on('drag', (event) => {
+                            event.sourceEvent.stopPropagation();
+                            
+                            if (!labelOffsets[airport.code]) {
+                                labelOffsets[airport.code] = { x: 0, y: 0 };
+                            }
+                            labelOffsets[airport.code].x += event.dx;
+                            labelOffsets[airport.code].y += event.dy;
+                            
+                            d3.select(event.sourceEvent.target)
+                                .attr('x', coords[0] + labelOffsets[airport.code].x)
+                                .attr('y', coords[1] - 12 - size + labelOffsets[airport.code].y);
+                        })
+                        .on('end', (event) => {
+                            event.sourceEvent.stopPropagation();
+                        });
+                    
+                    label.call(labelDrag);
                 }
+            });
+        }
+
+        function vincentyDistance(lat1, lon1, lat2, lon2) {
+            const a = 6378137.0;
+            const b = 6356752.314245;
+            const f = 1 / 298.257223563;
+
+            const L = (lon2 - lon1) * Math.PI / 180;
+            const U1 = Math.atan((1 - f) * Math.tan(lat1 * Math.PI / 180));
+            const U2 = Math.atan((1 - f) * Math.tan(lat2 * Math.PI / 180));
+            const sinU1 = Math.sin(U1), cosU1 = Math.cos(U1);
+            const sinU2 = Math.sin(U2), cosU2 = Math.cos(U2);
+
+            let lambda = L, lambdaP, iterLimit = 100;
+            let cosSqAlpha, sinSigma, cos2SigmaM, cosSigma, sigma;
+
+            do {
+                const sinLambda = Math.sin(lambda), cosLambda = Math.cos(lambda);
+                sinSigma = Math.sqrt((cosU2 * sinLambda) * (cosU2 * sinLambda) +
+                    (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) * (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda));
                 
-                // Convert distance to meters for internal use
-                let distanceMeters;
-                if (unit === 'nm') {
-                    distanceMeters = distance * 1852; // nautical miles to meters
-                } else if (unit === 'mi') {
-                    distanceMeters = distance * 1609.34; // miles to meters
-                } else { // km
-                    distanceMeters = distance * 1000; // kilometers to meters
-                }
+                if (sinSigma === 0) return 0;
                 
-                rings.push({
-                    airport: airport,
-                    distanceMeters: distanceMeters,
-                    distanceDisplay: distance,
-                    unit: unit
-                });
-                continue;
-            }
+                cosSigma = sinU1 * sinU2 + cosU1 * cosU2 * cosLambda;
+                sigma = Math.atan2(sinSigma, cosSigma);
+                const sinAlpha = cosU1 * cosU2 * sinLambda / sinSigma;
+                cosSqAlpha = 1 - sinAlpha * sinAlpha;
+                cos2SigmaM = cosSigma - 2 * sinU1 * sinU2 / cosSqAlpha;
+                
+                if (isNaN(cos2SigmaM)) cos2SigmaM = 0;
+                
+                const C = f / 16 * cosSqAlpha * (4 + f * (4 - 3 * cosSqAlpha));
+                lambdaP = lambda;
+                lambda = L + (1 - C) * f * sinAlpha *
+                    (sigma + C * sinSigma * (cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)));
+            } while (Math.abs(lambda - lambdaP) > 1e-12 && --iterLimit > 0);
+
+            if (iterLimit === 0) return NaN;
+
+            const uSq = cosSqAlpha * (a * a - b * b) / (b * b);
+            const A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
+            const B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
+            const deltaSigma = B * sinSigma * (cos2SigmaM + B / 4 * (cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM) -
+                B / 6 * cos2SigmaM * (-3 + 4 * sinSigma * sinSigma) * (-3 + 4 * cos2SigmaM * cos2SigmaM)));
+
+            return b * A * (sigma - deltaSigma);
+        }
+
+        function parseRouteInput(input) {
+            const items = input.split(',').map(r => r.trim()).filter(r => r.length > 0);
+            const routes = [];
+            const singlePoints = [];
+            const rings = [];
             
-            const codes = item.toUpperCase().split('-').map(c => c.trim()).filter(c => c.length > 0);
-            
-            if (codes.length === 1) {
-                const airport = airports.find(a => a.code === codes[0]);
-                if (!airport) {
-                    alert(`Airport code "${codes[0]}" not found.`);
-                    return null;
-                }
-                singlePoints.push(airport);
-            } else if (codes.length >= 2) {
-                const airportList = [];
-                for (let code of codes) {
-                    const airport = airports.find(a => a.code === code);
+            for (let item of items) {
+                // Check if it's a ring (format: distance@airport)
+                const ringMatch = item.match(/^(\d+(?:\.\d+)?)(nm|mi|km)\s*@\s*([A-Z]{3})$/i);
+                if (ringMatch) {
+                    const distance = parseFloat(ringMatch[1]);
+                    const unit = ringMatch[2].toLowerCase();
+                    const airportCode = ringMatch[3].toUpperCase();
+                    
+                    const airport = airports.find(a => a.code === airportCode);
                     if (!airport) {
-                        alert(`Airport code "${code}" not found.`);
+                        alert(`Airport code "${airportCode}" not found.`);
                         return null;
                     }
-                    airportList.push(airport);
+                    
+                    // Convert distance to meters for internal use
+                    let distanceMeters;
+                    if (unit === 'nm') {
+                        distanceMeters = distance * 1852; // nautical miles to meters
+                    } else if (unit === 'mi') {
+                        distanceMeters = distance * 1609.34; // miles to meters
+                    } else { // km
+                        distanceMeters = distance * 1000; // kilometers to meters
+                    }
+                    
+                    rings.push({
+                        airport: airport,
+                        distanceMeters: distanceMeters,
+                        distanceDisplay: distance,
+                        unit: unit
+                    });
+                    continue;
                 }
-                routes.push(airportList);
-            }
-        }
-        
-        if (routes.length === 0 && singlePoints.length === 0 && rings.length === 0) {
-            return null;
-        }
-        
-        return { routes: routes, points: singlePoints, rings: rings };
-    }
-
-    function getLabelText(airport) {
-        const labelType = document.getElementById('labelType').value;
-        switch(labelType) {
-            case 'code':
-                return airport.code;
-            case 'city':
-                return airport.city;
-            case 'both':
-                return `${airport.code} - ${airport.city}`;
-            default:
-                return airport.code;
-        }
-    }
-
-    function toggleBorder() {
-        const showBorder = document.getElementById('showBorder').checked;
-        const sphereFill = g.select('.sphere');
-        const sphereBorder = g.select('.sphere-border');
-        
-        if (sphereFill.empty() || sphereBorder.empty()) {
-            if (showBorder) {
-                updateProjection();
-                loadWorldMap();
-            }
-        } else {
-            sphereFill.style('display', showBorder ? 'block' : 'none');
-            sphereBorder.style('display', showBorder ? 'block' : 'none');
-        }
-    }
-
-    function toggleGraticule() {
-        const showGraticule = document.getElementById('showGraticule').checked;
-        const graticule = g.select('.graticule');
-        
-        if (graticule.empty()) {
-            if (showGraticule) {
-                updateProjection();
-                loadWorldMap();
-            }
-        } else {
-            graticule.style('display', showGraticule ? 'block' : 'none');
-        }
-    }
-
-    function updateMapColors() {
-        const bgColor = document.getElementById('bgColor').value;
-        const waterColor = document.getElementById('waterColor').value;
-        const landColor = document.getElementById('landColor').value;
-        const borderColor = document.getElementById('borderColor').value;
-        const graticuleColor = document.getElementById('graticuleColor').value;
-        
-        document.querySelector('.map-container').style.background = bgColor;
-        g.selectAll('.sphere').style('fill', waterColor);
-        g.selectAll('.land').style('fill', landColor);
-        g.selectAll('.sphere-border').style('stroke', borderColor);
-        g.selectAll('.graticule').style('stroke', graticuleColor);
-    }
-
-    function drawAllRoutes() {
-        drawnRoutes = [];
-        
-        const entries = document.querySelectorAll('.route-entry');
-        let hasValidRoute = false;
-        
-        entries.forEach(entry => {
-            const id = entry.id.split('-')[2];
-            const input = document.getElementById(`route-input-${id}`).value;
-            
-            if (!input.trim()) return;
-            
-            const parsedData = parseRouteInput(input);
-            if (!parsedData) return;
-            
-            hasValidRoute = true;
-            
-            const style = {
-                lineColor: document.getElementById(`line-color-${id}`).value,
-                lineWidth: document.getElementById(`line-width-${id}`).value,
-                lineStyle: document.getElementById(`line-style-${id}`).value,
-                showMarkers: document.getElementById(`show-markers-${id}`).checked,
-                markerColor: document.getElementById(`marker-color-${id}`).value,
-                markerSize: parseFloat(document.getElementById(`marker-size-${id}`).value),
-                markerShape: document.getElementById(`marker-shape-${id}`).value
-            };
-            
-            drawnRoutes.push({
-                routes: parsedData.routes,
-                points: parsedData.points,
-                rings: parsedData.rings,
-                style: style,
-                id: id
-            });
-        });
-        
-        if (!hasValidRoute) {
-            alert('Please enter at least one route or point.');
-            return;
-        }
-        
-        if (projection) {
-            savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
-            savedViewState.translate = projection.translate ? projection.translate() : null;
-            savedViewState.zoom = currentZoom;
-        }
-        
-        updateProjection();
-        loadWorldMap();
-        
-        setTimeout(() => {
-            let totalDistance = 0;
-            let allRouteInfo = [];
-            let routeDistances = {};
-            let routeAirports = {};
-            let routeFlights = {};
-            let uniqueAirports = new Set();
-            let totalSegments = 0;
-            
-            drawnRoutes.forEach((routeData, idx) => {
-                let routeTotal = 0;
-                let routeAirportSet = new Set();
-                let routeSegmentCount = 0;
                 
-                routeData.routes.forEach(airportList => {
-                    airportList.forEach(apt => {
+                const codes = item.toUpperCase().split('-').map(c => c.trim()).filter(c => c.length > 0);
+                
+                if (codes.length === 1) {
+                    const airport = airports.find(a => a.code === codes[0]);
+                    if (!airport) {
+                        alert(`Airport code "${codes[0]}" not found.`);
+                        return null;
+                    }
+                    singlePoints.push(airport);
+                } else if (codes.length >= 2) {
+                    const airportList = [];
+                    for (let code of codes) {
+                        const airport = airports.find(a => a.code === code);
+                        if (!airport) {
+                            alert(`Airport code "${code}" not found.`);
+                            return null;
+                        }
+                        airportList.push(airport);
+                    }
+                    routes.push(airportList);
+                }
+            }
+            
+            if (routes.length === 0 && singlePoints.length === 0 && rings.length === 0) {
+                return null;
+            }
+            
+            return { routes: routes, points: singlePoints, rings: rings };
+        }
+
+        function getLabelText(airport) {
+            const labelType = document.getElementById('labelType').value;
+            switch(labelType) {
+                case 'code':
+                    return airport.code;
+                case 'city':
+                    return airport.city;
+                case 'both':
+                    return `${airport.code} - ${airport.city}`;
+                default:
+                    return airport.code;
+            }
+        }
+
+        function toggleBorder() {
+            const showBorder = document.getElementById('showBorder').checked;
+            const sphereBorder = g.select('.sphere-border');
+            
+            if (sphereBorder.empty()) {
+                if (showBorder) {
+                    updateProjection();
+                    loadWorldMap();
+                }
+            } else {
+                sphereBorder.style('display', showBorder ? 'block' : 'none');
+            }
+        }
+
+        function toggleGraticule() {
+            const showGraticule = document.getElementById('showGraticule').checked;
+            const graticule = g.select('.graticule');
+            
+            if (graticule.empty()) {
+                if (showGraticule) {
+                    updateProjection();
+                    loadWorldMap();
+                }
+            } else {
+                graticule.style('display', showGraticule ? 'block' : 'none');
+            }
+        }
+
+        function updateMapColors() {
+            const bgColor = document.getElementById('bgColor').value;
+            const waterColor = document.getElementById('waterColor').value;
+            const landColor = document.getElementById('landColor').value;
+            const borderColor = document.getElementById('borderColor').value;
+            const graticuleColor = document.getElementById('graticuleColor').value;
+            
+            document.querySelector('.map-container').style.background = bgColor;
+            g.selectAll('.sphere').style('fill', waterColor);
+            g.selectAll('.land').style('fill', landColor);
+            g.selectAll('.sphere-border').style('stroke', borderColor);
+            g.selectAll('.graticule').style('stroke', graticuleColor);
+        }
+
+        function drawAllRoutes() {
+            drawnRoutes = [];
+            
+            const entries = document.querySelectorAll('.route-entry');
+            let hasValidRoute = false;
+            
+            entries.forEach(entry => {
+                const id = entry.id.split('-')[2];
+                const input = document.getElementById(`route-input-${id}`).value;
+                
+                if (!input.trim()) return;
+                
+                const parsedData = parseRouteInput(input);
+                if (!parsedData) return;
+                
+                hasValidRoute = true;
+                
+                const style = {
+                    lineColor: document.getElementById(`line-color-${id}`).value,
+                    lineWidth: document.getElementById(`line-width-${id}`).value,
+                    lineStyle: document.getElementById(`line-style-${id}`).value,
+                    showMarkers: document.getElementById(`show-markers-${id}`).checked,
+                    markerColor: document.getElementById(`marker-color-${id}`).value,
+                    markerSize: parseFloat(document.getElementById(`marker-size-${id}`).value),
+                    markerShape: document.getElementById(`marker-shape-${id}`).value
+                };
+                
+                drawnRoutes.push({
+                    routes: parsedData.routes,
+                    points: parsedData.points,
+                    rings: parsedData.rings,
+                    style: style,
+                    id: id
+                });
+            });
+            
+            if (!hasValidRoute) {
+                alert('Please enter at least one route or point.');
+                return;
+            }
+            
+            if (projection) {
+                savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
+                savedViewState.translate = projection.translate ? projection.translate() : null;
+                savedViewState.zoom = currentZoom;
+            }
+            
+            updateProjection();
+            loadWorldMap();
+            
+            setTimeout(() => {
+                let totalDistance = 0;
+                let allRouteInfo = [];
+                let routeDistances = {};
+                let routeAirports = {};
+                let routeFlights = {};
+                let uniqueAirports = new Set();
+                let totalSegments = 0;
+                
+                drawnRoutes.forEach((routeData, idx) => {
+                    let routeTotal = 0;
+                    let routeAirportSet = new Set();
+                    let routeSegmentCount = 0;
+                    
+                    routeData.routes.forEach(airportList => {
+                        airportList.forEach(apt => {
+                            uniqueAirports.add(apt.code);
+                            routeAirportSet.add(apt.code);
+                        });
+                        
+                        for (let i = 0; i < airportList.length - 1; i++) {
+                            const origin = airportList[i];
+                            const destination = airportList[i + 1];
+                            
+                            totalSegments++;
+                            routeSegmentCount++;
+                            
+                            const distMeters = vincentyDistance(
+                                origin.lat, origin.lon,
+                                destination.lat, destination.lon
+                            );
+
+                            const miles = (distMeters * 0.000621371).toFixed(0);
+                            const km = (distMeters / 1000).toFixed(0);
+                            const nm = (distMeters * 0.000539957).toFixed(0);
+
+                            totalDistance += distMeters;
+                            routeTotal += distMeters;
+
+                            allRouteInfo.push({
+                                routeId: routeData.id,
+                                origin: origin,
+                                destination: destination,
+                                miles: miles,
+                                km: km,
+                                nm: nm,
+                                color: routeData.style.lineColor
+                            });
+                        }
+                    });
+                    
+                    routeData.points.forEach(apt => {
                         uniqueAirports.add(apt.code);
                         routeAirportSet.add(apt.code);
                     });
                     
-                    for (let i = 0; i < airportList.length - 1; i++) {
-                        const origin = airportList[i];
-                        const destination = airportList[i + 1];
-                        
-                        totalSegments++;
-                        routeSegmentCount++;
-                        
-                        const distMeters = vincentyDistance(
-                            origin.lat, origin.lon,
-                            destination.lat, destination.lon
-                        );
-
-                        const miles = (distMeters * 0.000621371).toFixed(0);
-                        const km = (distMeters / 1000).toFixed(0);
-                        const nm = (distMeters * 0.000539957).toFixed(0);
-
-                        totalDistance += distMeters;
-                        routeTotal += distMeters;
-
-                        allRouteInfo.push({
-                            routeId: routeData.id,
-                            origin: origin,
-                            destination: destination,
-                            miles: miles,
-                            km: km,
-                            nm: nm,
-                            color: routeData.style.lineColor
-                        });
-                    }
-                });
-                
-                routeData.points.forEach(apt => {
-                    uniqueAirports.add(apt.code);
-                    routeAirportSet.add(apt.code);
-                });
-                
-                routeData.rings.forEach(ring => {
-                    uniqueAirports.add(ring.airport.code);
-                    routeAirportSet.add(ring.airport.code);
-                });
-                
-                routeDistances[routeData.id] = {
-                    total: routeTotal,
-                    color: routeData.style.lineColor
-                };
-                
-                routeAirports[routeData.id] = {
-                    airports: Array.from(routeAirportSet),
-                    color: routeData.style.lineColor
-                };
-                
-                routeFlights[routeData.id] = {
-                    count: routeSegmentCount,
-                    color: routeData.style.lineColor
-                };
-            });
-            
-            let infoHTML = `<strong>${drawnRoutes.length} Group${drawnRoutes.length > 1 ? 's' : ''} Drawn</strong><br>`;
-            infoHTML += `<strong>Airports:</strong> ${uniqueAirports.size} | <strong>Flights:</strong> ${totalSegments}<br>`;
-            
-            if (totalDistance > 0) {
-                const totalMiles = (totalDistance * 0.000621371).toFixed(0);
-                const totalKm = (totalDistance / 1000).toFixed(0);
-                const totalNm = (totalDistance * 0.000539957).toFixed(0);
-                infoHTML += `<strong>Total Distance:</strong> ${Number(totalMiles).toLocaleString()} mi / ${Number(totalKm).toLocaleString()} km / ${Number(totalNm).toLocaleString()} nm<br>`;
-                
-                if (Object.keys(routeDistances).length > 1) {
-                    infoHTML += '<div style="margin-top: 10px;">';
-                    Object.entries(routeDistances).forEach(([routeId, data]) => {
-                        const airportInfo = routeAirports[routeId];
-                        const flightInfo = routeFlights[routeId];
-                        const airportCount = airportInfo.airports.length;
-                        const airportList = airportInfo.airports.join(', ');
-                        const flightCount = flightInfo.count;
-                        
-                        if (data.total > 0) {
-                            const routeMiles = (data.total * 0.000621371).toFixed(0);
-                            const routeKm = (data.total / 1000).toFixed(0);
-                            const routeNm = (data.total * 0.000539957).toFixed(0);
-                            infoHTML += `<div style="color: ${data.color}; margin-left: 10px;">
-                                <strong>Group ${routeId}:</strong> ${Number(routeMiles).toLocaleString()} mi / ${Number(routeKm).toLocaleString()} km / ${Number(routeNm).toLocaleString()} nm<br>
-                                <span style="margin-left: 20px;">${flightCount} Flight${flightCount !== 1 ? 's' : ''} | ${airportCount} Airport${airportCount !== 1 ? 's' : ''} (${airportList})</span>
-                            </div>`;
-                        } else {
-                            infoHTML += `<div style="color: ${data.color}; margin-left: 10px;">
-                                <strong>Group ${routeId}:</strong> ${airportCount} Airport${airportCount !== 1 ? 's' : ''} (${airportList})
-                            </div>`;
-                        }
+                    routeData.rings.forEach(ring => {
+                        uniqueAirports.add(ring.airport.code);
+                        routeAirportSet.add(ring.airport.code);
                     });
-                    infoHTML += '</div>';
+                    
+                    routeDistances[routeData.id] = {
+                        total: routeTotal,
+                        color: routeData.style.lineColor
+                    };
+                    
+                    routeAirports[routeData.id] = {
+                        airports: Array.from(routeAirportSet),
+                        color: routeData.style.lineColor
+                    };
+                    
+                    routeFlights[routeData.id] = {
+                        count: routeSegmentCount,
+                        color: routeData.style.lineColor
+                    };
+                });
+                
+                let infoHTML = `<strong>${drawnRoutes.length} Group${drawnRoutes.length > 1 ? 's' : ''} Drawn</strong><br>`;
+                infoHTML += `<strong>Airports:</strong> ${uniqueAirports.size} | <strong>Flights:</strong> ${totalSegments}<br>`;
+                
+                if (totalDistance > 0) {
+                    const totalMiles = (totalDistance * 0.000621371).toFixed(0);
+                    const totalKm = (totalDistance / 1000).toFixed(0);
+                    const totalNm = (totalDistance * 0.000539957).toFixed(0);
+                    infoHTML += `<strong>Total Distance:</strong> ${Number(totalMiles).toLocaleString()} mi / ${Number(totalKm).toLocaleString()} km / ${Number(totalNm).toLocaleString()} nm<br>`;
+                    
+                    if (Object.keys(routeDistances).length > 1) {
+                        infoHTML += '<div style="margin-top: 10px;">';
+                        Object.entries(routeDistances).forEach(([routeId, data]) => {
+                            const airportInfo = routeAirports[routeId];
+                            const flightInfo = routeFlights[routeId];
+                            const airportCount = airportInfo.airports.length;
+                            const airportList = airportInfo.airports.join(', ');
+                            const flightCount = flightInfo.count;
+                            
+                            if (data.total > 0) {
+                                const routeMiles = (data.total * 0.000621371).toFixed(0);
+                                const routeKm = (data.total / 1000).toFixed(0);
+                                const routeNm = (data.total * 0.000539957).toFixed(0);
+                                infoHTML += `<div style="color: ${data.color}; margin-left: 10px;">
+                                    <strong>Group ${routeId}:</strong> ${Number(routeMiles).toLocaleString()} mi / ${Number(routeKm).toLocaleString()} km / ${Number(routeNm).toLocaleString()} nm<br>
+                                    <span style="margin-left: 20px;">${flightCount} Flight${flightCount !== 1 ? 's' : ''} | ${airportCount} Airport${airportCount !== 1 ? 's' : ''} (${airportList})</span>
+                                </div>`;
+                            } else {
+                                infoHTML += `<div style="color: ${data.color}; margin-left: 10px;">
+                                    <strong>Group ${routeId}:</strong> ${airportCount} Airport${airportCount !== 1 ? 's' : ''} (${airportList})
+                                </div>`;
+                            }
+                        });
+                        infoHTML += '</div>';
+                    }
                 }
+                
+                document.getElementById('route-info').innerHTML = infoHTML;
+
+                let segmentsHTML = '';
+                allRouteInfo.forEach(segment => {
+                    segmentsHTML += `
+                        <div class="route-item" style="border-left-color: ${segment.color}">
+                            <div class="route-item-header" style="color: ${segment.color}">Group ${segment.routeId}: ${segment.origin.code} → ${segment.destination.code}</div>
+                            <div>${segment.origin.city} to ${segment.destination.city}</div>
+                            <div class="distance-display">
+                                <div class="distance-item"><span class="distance-value">${Number(segment.miles).toLocaleString()}</span> mi</div>
+                                <div class="distance-item"><span class="distance-value">${Number(segment.km).toLocaleString()}</span> km</div>
+                                <div class="distance-item"><span class="distance-value">${Number(segment.nm).toLocaleString()}</span> nm</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                drawnRoutes.forEach(routeData => {
+                    routeData.points.forEach(airport => {
+                        segmentsHTML += `
+                            <div class="route-item" style="border-left-color: ${routeData.style.markerColor}">
+                                <div class="route-item-header" style="color: ${routeData.style.markerColor}">Group ${routeData.id}: ${airport.code}</div>
+                                <div>${airport.name}, ${airport.city}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    routeData.rings.forEach(ring => {
+                        segmentsHTML += `
+                            <div class="route-item" style="border-left-color: ${routeData.style.lineColor}">
+                                <div class="route-item-header" style="color: ${routeData.style.lineColor}">Group ${routeData.id}: ${ring.distanceDisplay}${ring.unit} ring @ ${ring.airport.code}</div>
+                                <div>${ring.airport.name}, ${ring.airport.city}</div>
+                            </div>
+                        `;
+                    });
+                });
+                
+                document.getElementById('route-list').innerHTML = segmentsHTML;
+            }, 100);
+        }
+
+        function clearAllRoutes() {
+            document.getElementById('routeEntries').innerHTML = '';
+            routeEntryCount = 0;
+            drawnRoutes = [];
+            document.getElementById('route-info').innerHTML = 'Add routes to view information';
+            document.getElementById('route-list').innerHTML = '';
+            
+            if (projection) {
+                savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
+                savedViewState.translate = projection.translate ? projection.translate() : null;
+                savedViewState.zoom = currentZoom;
             }
             
-            document.getElementById('route-info').innerHTML = infoHTML;
-
-            let segmentsHTML = '';
-            allRouteInfo.forEach(segment => {
-                segmentsHTML += `
-                    <div class="route-item" style="border-left-color: ${segment.color}">
-                        <div class="route-item-header" style="color: ${segment.color}">Group ${segment.routeId}: ${segment.origin.code} → ${segment.destination.code}</div>
-                        <div>${segment.origin.city} to ${segment.destination.city}</div>
-                        <div class="distance-display">
-                            <div class="distance-item"><span class="distance-value">${Number(segment.miles).toLocaleString()}</span> mi</div>
-                            <div class="distance-item"><span class="distance-value">${Number(segment.km).toLocaleString()}</span> km</div>
-                            <div class="distance-item"><span class="distance-value">${Number(segment.nm).toLocaleString()}</span> nm</div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            drawnRoutes.forEach(routeData => {
-                routeData.points.forEach(airport => {
-                    segmentsHTML += `
-                        <div class="route-item" style="border-left-color: ${routeData.style.markerColor}">
-                            <div class="route-item-header" style="color: ${routeData.style.markerColor}">Group ${routeData.id}: ${airport.code}</div>
-                            <div>${airport.name}, ${airport.city}</div>
-                        </div>
-                    `;
-                });
-                
-                routeData.rings.forEach(ring => {
-                    segmentsHTML += `
-                        <div class="route-item" style="border-left-color: ${routeData.style.lineColor}">
-                            <div class="route-item-header" style="color: ${routeData.style.lineColor}">Group ${routeData.id}: ${ring.distanceDisplay}${ring.unit} ring @ ${ring.airport.code}</div>
-                            <div>${ring.airport.name}, ${ring.airport.city}</div>
-                        </div>
-                    `;
-                });
-            });
-            
-            document.getElementById('route-list').innerHTML = segmentsHTML;
-        }, 100);
-    }
-
-    function clearAllRoutes() {
-        document.getElementById('routeEntries').innerHTML = '';
-        routeEntryCount = 0;
-        drawnRoutes = [];
-        document.getElementById('route-info').innerHTML = 'Add routes to view information';
-        document.getElementById('route-list').innerHTML = '';
-        
-        if (projection) {
-            savedViewState.rotation = projection.rotate ? projection.rotate() : [0, 0, 0];
-            savedViewState.translate = projection.translate ? projection.translate() : null;
-            savedViewState.zoom = currentZoom;
-        }
-        
-        updateProjection();
-        loadWorldMap();
-        addRouteEntry();
-    }
-
-    document.getElementById('projection').addEventListener('change', () => {
-        if (drawnRoutes.length > 0) {
             updateProjection();
             loadWorldMap();
-        } else {
-            updateProjection();
-            loadWorldMap();
+            addRouteEntry();
         }
-    });
 
-    window.addEventListener('resize', () => {
-        if (airports.length > 0) {
-            initMap();
-        }
-    });
-</script>
-```
+        document.getElementById('projection').addEventListener('change', () => {
+            if (drawnRoutes.length > 0) {
+                updateProjection();
+                loadWorldMap();
+            } else {
+                updateProjection();
+                loadWorldMap();
+            }
+        });
 
+        window.addEventListener('resize', () => {
+            if (airports.length > 0) {
+                initMap();
+            }
+        });
+    </script>
 </body>
 </html>
